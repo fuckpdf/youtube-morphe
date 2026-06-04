@@ -98,7 +98,7 @@ const { uploadApkRelease } = require("./lib/release");
 
     const patchedFile = fs
       .readdirSync(dir)
-      .filter((f) => f.endsWith("-patched.apk"))
+      .filter((f) => f.endsWith("patched.apk"))
       .map((f) => ({
         name: f,
         time: fs.statSync(path.join(dir, f)).mtime.getTime(),
@@ -108,7 +108,7 @@ const { uploadApkRelease } = require("./lib/release");
     if (!patchedFile) {
       console.log("📂 FILES IN ROOT:");
       fs.readdirSync(dir).forEach((f) => console.log(" -", f));
-      throw new Error("Patched APK not found (*-patched.apk)");
+      throw new Error("Patched APK not found (*patched.apk)");
     }
 
     const actualPatched = path.join(dir, patchedFile);
