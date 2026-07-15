@@ -58,12 +58,13 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
   let apkPath;
   try {
     console.log("🌐 SOURCE: APKMirror");
-    apkPath = await downloadApk(selectedVersion);
+    // İndirme fonksiyonuna config.name değerini açıkça ikinci parametre olarak gönderiyoruz
+    apkPath = await downloadApk(selectedVersion, config.name);
   } catch (apkMirrorError) {
     console.log("❌ APKMIRROR FAIL:", apkMirrorError.message);
     console.log("🔁 FALLBACK: Uptodown");
     try {
-      apkPath = await downloadFromUptodown(selectedVersion);
+      apkPath = await downloadFromUptodown(selectedVersion, config.name);
     } catch (uptodownError) {
       console.log("❌ UPTODOWN FAIL:", uptodownError.message);
       console.error(`❌ All sources failed for ${config.name}`);
