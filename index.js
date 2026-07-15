@@ -16,33 +16,34 @@ const { uploadApkRelease } = require("./lib/release");
   try {
     console.log("🚀 START\n");
 
-    // 1. Download desktop cli
     console.log("🌐 FETCH: morphe-desktop");
-    const desktop = await downloadLatestGithubAsset({
+    const desktopObj = await downloadLatestGithubAsset({
       owner: "MorpheApp",
       repo: "morphe-desktop",
       match: (n) => n.includes("desktop") && n.endsWith(".jar"),
     });
+    const desktop = desktopObj.name;
 
     console.log("📦 desktop:", desktop);
 
-    // 2. Download patches
     console.log("🌐 FETCH: morphe-patches");
-    const patches = await downloadLatestGithubAsset({
+    const patchesObj = await downloadLatestGithubAsset({
       owner: "MorpheApp",
       repo: "morphe-patches",
+      prerelease: true,
       match: (n) => n.endsWith(".mpp"),
     });
+    const patches = patchesObj.name;
 
     console.log("📦 PATCHES:", patches);
+    const patchReleaseBody = `### Morphe Yaması Sürüm Notları (${patchesObj.tag})\n\n${patchesObj.body}`;
 
-    // 3. Extract versions
     console.log("⬇️ Extract versions (list-versions)...");
 
     const { execSync } = require("child_process");
 
     const output = execSync(
-      `java -jar "${desktop}" list-versions -f com.google.android.youtube --patches="${patches}"`,
+      `java -jar "${desktop}" list-versions -f com.google.android.youtube --patches="${patches}" --include-experimental`,
       {
         encoding: "utf8",
         maxBuffer: 1024 * 1024 * 10,
@@ -69,7 +70,6 @@ const { uploadApkRelease } = require("./lib/release");
 
     console.log("\n➡️ TARGET:", selectedVersion);
 
-    // 4. Download APK
     let apkPath;
 
     try {
@@ -91,7 +91,6 @@ const { uploadApkRelease } = require("./lib/release");
 
     console.log("📦 APK:", apkPath);
 
-    // 5. Patch
     console.log("⬇️ PATCHING...");
 
     const actualPatched = patchApk(
@@ -108,7 +107,6 @@ const { uploadApkRelease } = require("./lib/release");
       );
     }
 
-    // 6. Rename / Copy
     const dir = process.cwd();
 
     const finalName = `youtube-${selectedVersion}-morphe.apk`;
@@ -118,15 +116,14 @@ const { uploadApkRelease } = require("./lib/release");
 
     console.log("📝 FINAL:", finalPath);
 
-    // 7. Upload Release
     console.log("🚀 UPLOAD RELEASE...");
 
     await uploadApkRelease({
       version: selectedVersion,
       apkPath: finalPath,
+      releaseBody: patchReleaseBody
     });
 
-    // 8. Done
     console.log("\n🎉 DONE");
     console.log("──────────────");
 
