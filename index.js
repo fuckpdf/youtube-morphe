@@ -60,11 +60,11 @@ async function processApp(appKey, desktop, patches) {
 
   let extraArgs = "";
   if (config.exclude && config.exclude.length > 0) {
-    extraArgs = config.exclude.map(p => `--exclude "${p}"`).join(" ");
+    extraArgs = config.exclude.map(p => `--disable "${p}"`).join(" ");
   }
 
   const actualPatched = patchApk(desktop, patches, apkPath, extraArgs);
-  
+
   if (!fs.existsSync(actualPatched)) return null;
 
   const finalName = `${config.name}-${selectedVersion}-patched.apk`;
