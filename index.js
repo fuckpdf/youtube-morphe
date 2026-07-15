@@ -24,7 +24,7 @@ const APPS_CONFIG = {
   }
 };
 
-async function processApp(appKey, desktop, patches, patchReleaseBody) {
+async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING APP: ${config.name.toUpperCase()} (${config.pkg})`);
 
@@ -41,7 +41,7 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
 
   if (!versions.length) {
     console.error(`⚠️ No versions found for ${config.name}`);
-    return;
+    return null;
   }
 
   console.log(`📋 ALL VERSIONS FOR ${config.name.toUpperCase()}:`);
@@ -50,7 +50,7 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
   const selectedVersion = pickLatestVersion(versions);
   if (!selectedVersion) {
     console.error(`⚠️ Failed to pick latest version for ${config.name}`);
-    return;
+    return null;
   }
 
   console.log(`\n➡️ TARGET VERSION: ${selectedVersion}`);
@@ -58,7 +58,6 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
   let apkPath;
   try {
     console.log("🌐 SOURCE: APKMirror");
-    // İndirme fonksiyonuna config.name değerini açıkça ikinci parametre olarak gönderiyoruz
     apkPath = await downloadApk(selectedVersion, config.name);
   } catch (apkMirrorError) {
     console.log("❌ APKMIRROR FAIL:", apkMirrorError.message);
@@ -68,7 +67,7 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
     } catch (uptodownError) {
       console.log("❌ UPTODOWN FAIL:", uptodownError.message);
       console.error(`❌ All sources failed for ${config.name}`);
-      return;
+      return null;
     }
   }
 
@@ -80,23 +79,19 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
 
   if (!fs.existsSync(actualPatched)) {
     console.error(`❌ Patched APK not found: ${actualPatched}`);
-    return;
+    return null;
   }
 
   const finalName = `${config.name}-${selectedVersion}-morphe.apk`;
   const finalPath = path.join(process.cwd(), finalName);
   fs.copyFileSync(actualPatched, finalPath);
 
-  console.log("📝 FINAL OUTPUT PATH:", finalPath);
-  console.log("🚀 UPLOADING TO GITHUB RELEASE...");
-
-  await uploadApkRelease({
-    version: `${config.name}-${selectedVersion}`,
-    apkPath: finalPath,
-    releaseBody: patchReleaseBody
-  });
-
-  console.log(`🎉 COMPLETED: ${config.name.toUpperCase()}\n`);
+  console.log("📝 FINAL OUTPUT PREPARED:", finalPath);
+  return {
+    name: finalName,
+    path: finalPath,
+    version: selectedVersion
+  };
 }
 
 (async () => {
@@ -120,8 +115,6 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
     });
     const patches = patchesObj.name;
 
-    const patchReleaseBody = `### Morphe Yaması Sürüm Notları (${patchesObj.tag})\n\n${patchesObj.body}`;
-
     const targetApp = process.env.TARGET_APP || "all";
     let appsToProcess = [];
 
@@ -133,11 +126,45 @@ async function processApp(appKey, desktop, patches, patchReleaseBody) {
       throw new Error(`Unknown target app: ${targetApp}`);
     }
 
+    const patchedApksList = [];
+
+    // 1. AŞAMAMIZ: Tüm uygulamaları sırayla sunucu üzerinde yamayıp listeye ekliyoruz
     for (const appKey of appsToProcess) {
-      await processApp(appKey, desktop, patches, patchReleaseBody);
+      const result = await processApp(appKey, desktop, patches);
+      if (result) {
+        patchedApksList.push(result);
+      }
     }
 
-    console.log("🏁 ALL PROCESSES FINISHED SUCCESSFULLY");
+    // 2. AŞAMAMIZ: Eğer başarılı derlenen uygulama varsa tek bir ortak sürüm altında toplu yayınlıyoruz
+    if (patchedApksList.length > 0) {
+      console.log("\n🚀 ALL APKS PATCHED SUCCESSFULLY. STARTING BATCH UPLOAD...");
+
+      // Sürüm notlarının açıklamasına derlenen uygulamaların isimlerini ve versiyonlarını dinamik ekliyoruz
+      let customReleaseBody = `### 📦 Derlenen Uygulama Sürümleri\n`;
+      patchedApksList.forEach(apk => {
+        customReleaseBody += `* **${apk.name.split('-')[0].toUpperCase()}**: v${apk.version}\n`;
+      });
+      customReleaseBody += `\n---\n### Morphe Temel Sürüm Notları (${patchesObj.tag})\n\n${patchesObj.body}`;
+
+      // Ortak etiket (tag) olarak Morphe'nin kendi yama sürümünü kullanıyoruz (Örn: 1.35.0-dev.5)
+      const commonTag = patchesObj.tag;
+
+      // Kütüphanemizin yapısını bozmamak için döngüyle dosyaları tek tek aynı sürümün içine gönderiyoruz
+      for (const apk of patchedApksList) {
+        console.log(`📤 Uploading ${apk.name} to shared release ${commonTag}...`);
+        await uploadApkRelease({
+          version: commonTag,
+          apkPath: apk.path,
+          releaseBody: customReleaseBody
+        });
+      }
+
+      console.log("\n🎉 ALL PROCESSES FINISHED SUCCESSFULLY. SINGLE CATEGORY RELEASE DONE!");
+    } else {
+      console.error("\n❌ No APKs were successfully patched. Skipping upload.");
+    }
+
   } catch (err) {
     console.error("\n❌ GLOBAL ERROR:", err.message);
     process.exit(1);
