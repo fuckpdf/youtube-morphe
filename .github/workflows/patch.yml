@@ -1,61 +1,48 @@
-name: Patch Morphe
+name: Patch APKs
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: write
-  actions: write
+  schedule:
+    - cron: '0 0 * * *' # Her gün gece yarısı otomatik çalışır
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'zulu'
+          java-version: '17'
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Build Tools and apksigner
         run: |
-          npm ci
-          npx playwright install chromium --with-deps
+          sdkmanager "build-tools;34.0.0" "platform-tools"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          # apksigner'ı global pathe ekleyelim
+          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
 
-      - name: Setup Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > Panemi.keystore
-
-      - name: Run script
+      - name: Run Patching Script
         run: node index.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          TARGET_APP: "all"
-          KS_PATH: "Panemi.keystore"
-          KS_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KS_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Delete old releases
-        uses: dev-drprasad/delete-older-releases@v0.3.4
-        with:
-          keep_latest: 1
-          delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Delete old workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          retain_days: 0
-          keep_minimum_runs: 1
+          DEVICE_ABI: "arm64-v8a"
