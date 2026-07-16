@@ -212,11 +212,13 @@
                     errorMsg.value = null;
 
                     try {
+                        // KODDAKİ TEK DEĞİŞİKLİK BURADA: Cache-Control başlığını sildik, yerine tarayıcının yerel cache kuralını ekledik.
+                        // Bu sayede CORS hatasına (NetworkError) yakalanmadan önbelleği baypas ediyoruz.
                         const response = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`, {
                             headers: { 
-                                "Accept": "application/vnd.github+json",
-                                "Cache-Control": "no-cache" 
-                            }
+                                "Accept": "application/vnd.github+json"
+                            },
+                            cache: "no-store" 
                         });
 
                         if (!response.ok) {
@@ -238,7 +240,6 @@
                         let parsedReleaseIds = new Set();
                         let tempAppData = {};
 
-                        // YENİ MANTIK: Dosya ismine değil, etiket (tag_name) ismine bak.
                         releases.forEach(release => {
                             if (!latestDate.value && release.published_at) {
                                 latestDate.value = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -254,10 +255,8 @@
                             else if (tagLower.startsWith("instagram-")) appKey = "instagram";
 
                             if (appKey && !tempAppData[appKey]) {
-                                // Etiketten sürüm numarasını ayıkla
                                 const rawVersion = release.tag_name.split('-').slice(1).join('-');
                                 
-                                // O uygulamanın ana APK dosyasını bul
                                 const mainApk = (release.assets || []).find(a => 
                                     a.name.toLowerCase().endsWith('.apk') && a.name.toLowerCase() !== 'microg.apk'
                                 );
@@ -272,14 +271,12 @@
                                     };
                                 }
 
-                                // Sürüm notlarını birleştir
                                 if (release.body && !parsedReleaseIds.has(release.id)) {
                                     combinedChangelog += `${release.body}\n\n<hr>\n\n`;
                                     parsedReleaseIds.add(release.id);
                                 }
                             }
 
-                            // MicroG dosyasını her yayında ayrıca ara (Genellikle YouTube'un içindedir)
                             if (!tempAppData["microg"]) {
                                 const microgApk = (release.assets || []).find(a => a.name.toLowerCase() === 'microg.apk');
                                 if (microgApk) {
