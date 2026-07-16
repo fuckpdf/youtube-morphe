@@ -17,7 +17,7 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#000000', // Tam AMOLED siyahı
+                        darkBg: '#000000',
                         cardBg: '#000000',
                         accent: '#38bdf8',
                         obtainium: '#0ea5e9'
@@ -35,44 +35,22 @@
     </script>
 
     <style>
-        /* AMOLED BLACK TEMASI */
-        body { 
-            background-color: #000000; /* Gerçek Siyah */
-            color: #f8fafc; 
-        }
-        
-        /* Kartların arkaplanını siyah yapıp ince bir beyaz çerçeve verdik */
-        .glass-panel {
-            background: #000000; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Hover (dokunma/üzerine gelme) efekti: Kenarlar parlar */
-        .glass-panel:hover {
-            border-color: rgba(56, 189, 248, 0.4);
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
-        }
-
-        .glass-panel-muted {
-            background: transparent;
-            border: 1px dashed rgba(255, 255, 255, 0.1);
-        }
-
+        body { background-color: #000000; color: #f8fafc; }
+        .glass-panel { background: #000000; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-panel:hover { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 0 15px rgba(56, 189, 248, 0.1); }
+        .glass-panel-muted { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.1); }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #000000; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
-
         .markdown-body h3 { font-size: 1.25rem; font-weight: 600; color: #fff; margin-top: 1.5rem; margin-bottom: 0.5rem; }
         .markdown-body h3:first-child { margin-top: 0; }
-        .markdown-body p { margin-bottom: 1rem; color: #9ca3af; } /* Gri metinler siyah ekranda daha iyi okunur */
+        .markdown-body p { margin-bottom: 1rem; color: #9ca3af; }
         .markdown-body ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; color: #9ca3af; }
         .markdown-body li { margin-bottom: 0.25rem; }
         .markdown-body hr { border-color: rgba(255,255,255,0.1); margin: 1.5rem 0; }
         .markdown-body a { color: #38bdf8; text-decoration: none; transition: color 0.2s; }
         .markdown-body a:hover { color: #7dd3fc; text-decoration: underline; }
-        
-        /* Sürüm notları kutuları için tam siyah arkaplan */
         .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; background: #000000; }
         .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; padding: 4px; color: #e5e7eb; }
     </style>
@@ -80,7 +58,6 @@
 <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500/30">
 
     <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col transition-all duration-300">
-        
         <template v-if="loading">
             <header class="text-center mb-10 pt-6 animate-pulse">
                 <div class="h-10 bg-zinc-900 rounded-lg w-3/4 md:w-1/2 mx-auto mb-4"></div>
@@ -132,7 +109,6 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
                 <template v-for="(appKey, index) in ORDER" :key="appKey">
-                    
                     <div v-if="appData[appKey]" class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-sky-900/20 animate-fade-in group" :style="{ animationDelay: `${0.15 + (index * 0.05)}s` }">
                         <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
                             <div class="w-14 h-14 bg-[#0a0a0a] rounded-xl flex items-center justify-center p-2.5 border border-white/5 transition-colors group-hover:border-white/10">
@@ -143,7 +119,6 @@
                                 <p class="text-gray-500 text-xs sm:text-sm font-medium">{{ appData[appKey].versionText }}</p>
                             </div>
                         </div>
-                        
                         <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
                             <a :href="appData[appKey].downloadUrl" class="flex-1 sm:flex-none bg-emerald-900/20 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-900/50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all text-center">
                                 Download
@@ -157,7 +132,6 @@
                             </a>
                         </div>
                     </div>
-
                     <div v-else class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-50 animate-fade-in" :style="{ animationDelay: `${0.15 + (index * 0.05)}s` }">
                         <div class="w-14 h-14 bg-[#0a0a0a] rounded-xl flex items-center justify-center p-2.5 border border-white/5">
                             <img :src="ICONS[appKey]" :alt="DISPLAY_NAMES[appKey]" class="w-full h-full object-contain grayscale opacity-30">
@@ -264,45 +238,60 @@
                         let parsedReleaseIds = new Set();
                         let tempAppData = {};
 
+                        // YENİ MANTIK: Dosya ismine değil, etiket (tag_name) ismine bak.
                         releases.forEach(release => {
-                            if (!latestDate.value) {
+                            if (!latestDate.value && release.published_at) {
                                 latestDate.value = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
                             }
 
-                            (release.assets || []).forEach(asset => {
-                                if (!asset.name.toLowerCase().endsWith('.apk')) return;
+                            const tagLower = (release.tag_name || "").toLowerCase();
+                            let appKey = null;
+
+                            if (tagLower.startsWith("yt.music-")) appKey = "youtube-music";
+                            else if (tagLower.startsWith("youtube-")) appKey = "youtube";
+                            else if (tagLower.startsWith("reddit-")) appKey = "reddit";
+                            else if (tagLower.startsWith("twitter-")) appKey = "twitter";
+                            else if (tagLower.startsWith("instagram-")) appKey = "instagram";
+
+                            if (appKey && !tempAppData[appKey]) {
+                                // Etiketten sürüm numarasını ayıkla
+                                const rawVersion = release.tag_name.split('-').slice(1).join('-');
                                 
-                                const nameLower = asset.name.toLowerCase();
-                                let appKey = null;
+                                // O uygulamanın ana APK dosyasını bul
+                                const mainApk = (release.assets || []).find(a => 
+                                    a.name.toLowerCase().endsWith('.apk') && a.name.toLowerCase() !== 'microg.apk'
+                                );
 
-                                if (nameLower.startsWith("yt.music-")) appKey = "youtube-music";
-                                else if (nameLower.startsWith("youtube-")) appKey = "youtube";
-                                else if (nameLower.startsWith("reddit-")) appKey = "reddit";
-                                else if (nameLower.startsWith("twitter-")) appKey = "twitter";
-                                else if (nameLower.startsWith("instagram-")) appKey = "instagram";
-                                else if (nameLower === "microg.apk") appKey = "microg";
-
-                                if (appKey && !tempAppData[appKey]) {
-                                    let versionText = "GmsCore / Support component";
-                                    if (appKey !== "microg") {
-                                        const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '').replace('.apkm', '');
-                                        versionText = "v" + rawVersion;
-                                    }
-
+                                if (mainApk) {
                                     tempAppData[appKey] = { 
-                                        name: asset.name,
+                                        name: mainApk.name,
                                         displayName: DISPLAY_NAMES[appKey], 
                                         icon: ICONS[appKey], 
-                                        versionText, 
-                                        downloadUrl: asset.browser_download_url 
+                                        versionText: "v" + rawVersion, 
+                                        downloadUrl: mainApk.browser_download_url 
                                     };
-
-                                    if (appKey !== "microg" && release.body && !parsedReleaseIds.has(release.id)) {
-                                        combinedChangelog += `${release.body}\n\n<hr>\n\n`;
-                                        parsedReleaseIds.add(release.id);
-                                    }
                                 }
-                            });
+
+                                // Sürüm notlarını birleştir
+                                if (release.body && !parsedReleaseIds.has(release.id)) {
+                                    combinedChangelog += `${release.body}\n\n<hr>\n\n`;
+                                    parsedReleaseIds.add(release.id);
+                                }
+                            }
+
+                            // MicroG dosyasını her yayında ayrıca ara (Genellikle YouTube'un içindedir)
+                            if (!tempAppData["microg"]) {
+                                const microgApk = (release.assets || []).find(a => a.name.toLowerCase() === 'microg.apk');
+                                if (microgApk) {
+                                    tempAppData["microg"] = {
+                                        name: microgApk.name,
+                                        displayName: DISPLAY_NAMES["microg"],
+                                        icon: ICONS["microg"],
+                                        versionText: "GmsCore / Support component",
+                                        downloadUrl: microgApk.browser_download_url
+                                    };
+                                }
+                            }
                         });
 
                         appData.value = tempAppData;
