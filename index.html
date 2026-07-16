@@ -193,10 +193,12 @@
                 const appData = ref({});
                 const changelogHTML = ref(null);
 
+                // --- DEĞİŞEN TEK VE EN KRİTİK KISIM ---
                 const getObtainiumUrl = (appKey) => {
                     let apkFilter = "";
                     let releaseFilter = ""; 
 
+                    // Uygulamaya özel doğru Regex filtreleri
                     if (appKey === "youtube") { apkFilter = "YouTube-.*\\.apk"; releaseFilter = "YouTube-.*"; }
                     else if (appKey === "youtube-music") { apkFilter = "YT\\.Music-.*\\.apk"; releaseFilter = "YT\\.Music-.*"; }
                     else if (appKey === "instagram") { apkFilter = "Instagram-.*\\.apk"; releaseFilter = "Instagram-.*"; }
@@ -204,7 +206,8 @@
                     else if (appKey === "reddit") { apkFilter = "Reddit-.*\\.apk"; releaseFilter = "Reddit-.*"; }
                     else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; releaseFilter = "YouTube-.*"; } 
                     
-                    return `obtainium://add/https://github.com/${REPO}?filenameFilter=${encodeURIComponent(apkFilter)}&releaseFilterRegEx=${encodeURIComponent(releaseFilter)}`;
+                    // Obtainium'un anlayacağı asıl parametre isimleri: apkFilterRegEx ve releaseTitleFilterRegEx
+                    return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(apkFilter)}&releaseTitleFilterRegEx=${encodeURIComponent(releaseFilter)}`;
                 };
 
                 const init = async () => {
@@ -212,8 +215,6 @@
                     errorMsg.value = null;
 
                     try {
-                        // KODDAKİ TEK DEĞİŞİKLİK BURADA: Cache-Control başlığını sildik, yerine tarayıcının yerel cache kuralını ekledik.
-                        // Bu sayede CORS hatasına (NetworkError) yakalanmadan önbelleği baypas ediyoruz.
                         const response = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`, {
                             headers: { 
                                 "Accept": "application/vnd.github+json"
