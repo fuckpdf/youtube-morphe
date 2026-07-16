@@ -16,15 +16,6 @@ const DISPLAY_NAMES = {
   "instagram": "Instagram"
 };
 
-const PATCH_SOURCE_NAMES = {
-  "morphe": "Morphe",
-  "piko": "Piko"
-};
-
-function cleanVersionTag(tag) {
-  return (tag || "").replace(/^v/i, "");
-}
-
 const APPS_CONFIG = {
   "youtube": {
     pkg: "com.google.android.youtube",
@@ -152,7 +143,6 @@ async function processApp(appKey, desktop, patches) {
     const desktop = desktopObj.name;
 
     const patchesPool = { morphe: null, piko: null };
-    const patchVersions = { morphe: null, piko: null };
     let combinedReleaseNotes = "";
     let mainReleaseTag = "";
 
@@ -168,7 +158,6 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.morphe = morpheMpp.name;
-      patchVersions.morphe = cleanVersionTag(morpheMpp.tag);
       mainReleaseTag = morpheMpp.tag; 
       combinedReleaseNotes += `\n---\n### 🟢 Morphe Release Notes (${morpheMpp.tag})\n\n${morpheMpp.body}\n`;
     }
@@ -182,7 +171,6 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.piko = pikoMpp.name;
-      patchVersions.piko = cleanVersionTag(pikoMpp.tag);
       if (!mainReleaseTag) mainReleaseTag = pikoMpp.tag; 
       combinedReleaseNotes += `\n---\n### ✖️ Piko Release Notes (${pikoMpp.tag})\n\n${pikoMpp.body}\n`;
     }
@@ -203,10 +191,7 @@ async function processApp(appKey, desktop, patches) {
 
       patchedApksList.forEach(apk => {
         const displayName = DISPLAY_NAMES[apk.appName] || apk.appName;
-        const patchName = PATCH_SOURCE_NAMES[apk.patchSource] || apk.patchSource;
-        const patchVersion = patchVersions[apk.patchSource] || "";
-        const fullLabel = `${displayName}-${apk.version}-${patchName}-${patchVersion}`;
-        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${fullLabel}**  \n`;
+        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${displayName}**  \n`;
       });
 
       customReleaseBody += `\n${combinedReleaseNotes}`;
