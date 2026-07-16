@@ -40,7 +40,7 @@ const APPS_CONFIG = {
     patchSource: "piko",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/x/000000",
-    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
+    exclude: ["Dynamic color"] // Sadece istemediğimiz yamayı dışlıyoruz. Diğerleri otomatik eklenecek!
   }
 };
 
@@ -72,12 +72,9 @@ async function processApp(appKey, desktop, patches) {
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--exclude "${p}"`));
   }
-  if (config.enable && config.enable.length > 0) {
-    argParts.push(...config.enable.map(p => `--include "${p}"`));
-  }
+  
   extraArgs = argParts.join(" ");
 
-  // config.arch parametresi doğrudan patchApk'ya gönderiliyor
   const actualPatched = patchApk(desktop, patches, apkPath, extraArgs, config.arch);
 
   if (!fs.existsSync(actualPatched)) return null;
