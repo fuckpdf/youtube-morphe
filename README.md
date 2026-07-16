@@ -35,10 +35,10 @@ In this repository, you can find and use carefully selected Android applications
 <br>
 
 | 📦 App Name |
-|:-------:|
-| YouTube |
-| YouTube Music |
-| Reddit |
+|:---|
+| <img src="https://cdn.simpleicons.org/youtube/FF0000" width="20"> &nbsp; YouTube |
+| <img src="https://cdn.simpleicons.org/youtubemusic/FF0000" width="20"> &nbsp; YouTube Music |
+| <img src="https://cdn.simpleicons.org/reddit/FF4500" width="20"> &nbsp; Reddit |
 
 </details>
 
@@ -47,11 +47,13 @@ In this repository, you can find and use carefully selected Android applications
 <br>
 
 | 📦 App Name |
-|:-------:|
-| X / Twitter |
-| Instagram |
+|:---|
+| <img src="https://cdn.simpleicons.org/x/000000" width="20"> &nbsp; X / Twitter |
+| <img src="https://cdn.simpleicons.org/instagram/E4405F" width="20"> &nbsp; Instagram |
 
 </details>
+
+
 
 ---
 
