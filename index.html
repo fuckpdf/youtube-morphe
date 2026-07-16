@@ -210,15 +210,17 @@
                 const init = async () => {
                     loading.value = true;
                     errorMsg.value = null;
+                    isRateLimit.value = false;
 
                     try {
-                        // KODDAKİ TEK DEĞİŞİKLİK BURADA: Cache-Control başlığını sildik, yerine tarayıcının yerel cache kuralını ekledik.
-                        // Bu sayede CORS hatasına (NetworkError) yakalanmadan önbelleği baypas ediyoruz.
-                        const response = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=30`, {
+                        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                        const apiUrl = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
+                        
+                        const response = await fetch(proxyUrl + apiUrl, {
                             headers: { 
-                                "Accept": "application/vnd.github+json"
-                            },
-                            cache: "no-store" 
+                                "Accept": "application/vnd.github+json",
+                                "Origin": window.location.origin
+                            }
                         });
 
                         if (!response.ok) {
@@ -292,6 +294,7 @@
                         });
 
                         appData.value = tempAppData;
+                        
                         if (combinedChangelog) {
                             const rawHtml = marked.parse(combinedChangelog);
                             changelogHTML.value = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
@@ -301,7 +304,7 @@
 
                     } catch (error) {
                         console.error(error);
-                        errorMsg.value = error.message;
+                        errorMsg.value = error.message || "Unknown error occurred";
                         loading.value = false;
                     }
                 };
@@ -317,4 +320,4 @@
         }).mount('#app');
     </script>
 </body>
-</html>
+    </html>
