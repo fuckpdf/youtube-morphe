@@ -7,7 +7,7 @@ const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { downloadApk } = require("./lib/apkmirror");
 const { downloadFromUptodown } = require("./lib/uptodown");
 const { patchApk } = require("./lib/patcher");
-const { uploadApkRelease } = require("./lib/release");
+const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
 
 const APPS_CONFIG = {
   "youtube": {
@@ -116,8 +116,12 @@ async function processApp(appKey, desktop, patches) {
     const patchedApksList = [];
 
     for (const appKey of appsToProcess) {
-      const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
-      if (result) patchedApksList.push(result);
+      try {
+        const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
+        if (result) patchedApksList.push(result);
+      } catch (err) {
+        console.error(`❌ ${appKey.toUpperCase()} failed, skipping: ${err.message}`);
+      }
     }
 
     if (patchedApksList.length > 0) {
@@ -127,15 +131,17 @@ async function processApp(appKey, desktop, patches) {
       });
       customReleaseBody += `\n---\n### Sürüm Detayları (${releaseTag})\n\n${releaseBody}`;
 
+      const release = await ensureRelease(releaseTag, customReleaseBody);
+
       for (const apk of patchedApksList) {
-        await uploadApkRelease({
-          version: releaseTag,
-          apkPath: apk.path,
-          releaseBody: customReleaseBody
-        });
+        await uploadPatchedApk(release, apk.path);
       }
+
+      await uploadMicroGOnce(release);
+      console.log("✅ Release done");
     }
   } catch (err) {
+    console.error("❌ Fatal error:", err.message);
     process.exit(1);
   }
 })();
