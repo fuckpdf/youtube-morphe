@@ -32,7 +32,8 @@ const APPS_CONFIG = {
     pkg: "com.twitter.android",
     name: "twitter",
     patchSource: "piko",
-    exclude: ["Dynamic color"]
+    exclude: ["Dynamic color"],
+    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
   }
 };
 
@@ -59,9 +60,14 @@ async function processApp(appKey, desktop, patches) {
   }
 
   let extraArgs = "";
+  const argParts = [];
   if (config.exclude && config.exclude.length > 0) {
-    extraArgs = config.exclude.map(p => `--disable "${p}"`).join(" ");
+    argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
+  if (config.enable && config.enable.length > 0) {
+    argParts.push(...config.enable.map(p => `--enable "${p}"`));
+  }
+  extraArgs = argParts.join(" ");
 
   const actualPatched = patchApk(desktop, patches, apkPath, extraArgs);
 
