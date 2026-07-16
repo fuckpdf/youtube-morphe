@@ -70,8 +70,8 @@
         .markdown-body a:hover { color: #7dd3fc; text-decoration: underline; }
         
         /* Daraltılabilir Sürüm Notları İçin Stil Eklentisi */
-        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; }
-        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; }
+        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; background: rgba(0,0,0,0.2); }
+        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; padding: 4px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500/30">
@@ -81,7 +81,7 @@
 
     <script>
         const REPO = "fuckpdf/youtube-morphe";
-        const CACHE_KEY = "patched-apks-cache-v2";
+        const CACHE_KEY = "patched-apks-cache-v3";
         const CACHE_TTL_MS = 5 * 60 * 1000; 
 
         const ICONS = {
@@ -209,7 +209,7 @@
                 </div>
                 ` : ''}
 
-                <footer class="mt-16 text-center text-slate-500 text-sm animate-fade-in" style="animation-delay: 0.4s;">
+                <footer class="mt-16 pb-8 text-center text-slate-500 text-sm animate-fade-in" style="animation-delay: 0.4s;">
                     <p>Automatically built via GitHub Actions.</p>
                     <p class="mt-1">Source code: <a href="https://github.com/${REPO}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline transition-colors">youtube-morphe</a></p>
                 </footer>
@@ -233,9 +233,15 @@
                 `;
             }
 
-            // Regex for Obtainium specifically targetting the exact App Name format to prevent infinite loops
-            let filenameFilter = app.name.replace(".apk", "");
-            if (appKey === "microg") filenameFilter = "MicroG";
+            // Obtainium sonsuz döngü problemini çözen, sürüm numarasından bağımsız Regex (Düzenli İfade) filtreleri
+            let filenameFilter = "";
+            if (appKey === "youtube") filenameFilter = "YouTube-.*\\.apk";
+            else if (appKey === "youtube-music") filenameFilter = "YT\\.Music-.*\\.apk";
+            else if (appKey === "instagram") filenameFilter = "Instagram-.*\\.apk";
+            else if (appKey === "twitter") filenameFilter = "Twitter-.*\\.apk";
+            else if (appKey === "reddit") filenameFilter = "Reddit-.*\\.apk";
+            else if (appKey === "microg") filenameFilter = "MicroG\\.apk";
+
             const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${encodeURIComponent(filenameFilter)}`;
 
             return `
@@ -311,7 +317,6 @@
                 let latestDate = null;
                 let parsedReleaseIds = new Set();
 
-                // Yeni Sistem: Tüm Sürümleri (Releases) tarayarak en güncel olanları eşleştirir.
                 releases.forEach(release => {
                     if (!latestDate) {
                         latestDate = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -322,7 +327,6 @@
 
                         let appKey = null;
                         
-                        // Yeni isimlendirme kurallarına göre eşleştirme (Örn: YT.Music-9.26.51.apk)
                         if (asset.name.startsWith("YT.Music-")) appKey = "youtube-music";
                         else if (asset.name.startsWith("YouTube-")) appKey = "youtube";
                         else if (asset.name.startsWith("Reddit-")) appKey = "reddit";
@@ -330,14 +334,12 @@
                         else if (asset.name.startsWith("Instagram-")) appKey = "instagram";
                         else if (asset.name === "MicroG.apk") appKey = "microg";
 
-                        // Bu uygulamayı ilk defa buluyorsak (yani en güncel sürümse) kaydet
                         if (appKey && !appData[appKey]) {
                             const icon = ICONS[appKey];
                             const displayName = DISPLAY_NAMES[appKey];
                             
                             let versionText = "GmsCore / Support component";
                             if (appKey !== "microg") {
-                                // Sürüm numarasını isminden ayıkla (Örn: YouTube-21.26.360.apk -> 21.26.360)
                                 const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
                                 versionText = "v" + rawVersion;
                             }
@@ -350,7 +352,6 @@
                                 downloadUrl: asset.browser_download_url 
                             };
 
-                            // Sürüm notlarını birleştir (MicroG hariç)
                             if (appKey !== "microg" && release.body && !parsedReleaseIds.has(release.id)) {
                                 combinedChangelog += `${release.body}\n\n<hr>\n\n`;
                                 parsedReleaseIds.add(release.id);
