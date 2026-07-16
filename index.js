@@ -119,12 +119,16 @@ async function processApp(appKey, desktop, patches) {
 
   if (!fs.existsSync(actualPatched)) return null;
 
-  const finalName = `${config.name}-${selectedVersion}-patched.apk`;
+  // DOSYA İSİMLENDİRMESİ BURADA DÜZELTİLDİ: "YouTube-21.26.360.apk" formatı.
+  const appDisplayName = DISPLAY_NAMES[config.name] || config.name;
+  const finalName = `${appDisplayName}-${selectedVersion}.apk`;
   const finalPath = path.join(process.cwd(), finalName);
+  
   fs.copyFileSync(actualPatched, finalPath);
 
   return { 
     appName: config.name, 
+    displayName: appDisplayName,
     icon: config.icon, 
     patchSource: config.patchSource,
     name: finalName, 
@@ -143,12 +147,13 @@ async function processApp(appKey, desktop, patches) {
     const desktop = desktopObj.name;
 
     const patchesPool = { morphe: null, piko: null };
-    let combinedReleaseNotes = "";
-    let mainReleaseTag = "";
+    let morpheNotes = "";
+    let pikoNotes = "";
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? Object.keys(APPS_CONFIG) : [targetApp];
 
+    // Morphe Yamaları ve Sürüm Notları Çekiliyor (Daraltılabilir HTML Formatında)
     const needsMorphe = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "morphe");
     if (needsMorphe) {
       const morpheMpp = await downloadLatestGithubAsset({
@@ -158,10 +163,19 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.morphe = morpheMpp.name;
-      mainReleaseTag = morpheMpp.tag; 
-      combinedReleaseNotes += `\n---\n### 🟢 Morphe Release Notes (${morpheMpp.tag})\n\n${morpheMpp.body}\n`;
+      
+      morpheNotes = `
+<details>
+<summary>🟢 <b>Morphe Sürüm Notları (${morpheMpp.tag})</b></summary>
+<br>
+
+${morpheMpp.body}
+
+</details>
+`;
     }
 
+    // Piko Yamaları ve Sürüm Notları Çekiliyor (Daraltılabilir HTML Formatında)
     const needsPiko = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "piko");
     if (needsPiko) {
       const pikoMpp = await downloadLatestGithubAsset({
@@ -171,8 +185,16 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.piko = pikoMpp.name;
-      if (!mainReleaseTag) mainReleaseTag = pikoMpp.tag; 
-      combinedReleaseNotes += `\n---\n### ✖️ Piko Release Notes (${pikoMpp.tag})\n\n${pikoMpp.body}\n`;
+      
+      pikoNotes = `
+<details>
+<summary>✖️ <b>Piko Sürüm Notları (${pikoMpp.tag})</b></summary>
+<br>
+
+${pikoMpp.body}
+
+</details>
+`;
     }
 
     const patchedApksList = [];
@@ -186,26 +208,37 @@ async function processApp(appKey, desktop, patches) {
       }
     }
 
+    // AYRI SÜRÜMLER (RELEASES) OLUŞTURMA DÖNGÜSÜ
     if (patchedApksList.length > 0) {
-      let customReleaseBody = `### 📦 Built Applications\n\n`;
-
-      patchedApksList.forEach(apk => {
-        const displayName = DISPLAY_NAMES[apk.appName] || apk.appName;
-        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${displayName}**  \n`;
-      });
-
-      customReleaseBody += `\n${combinedReleaseNotes}`;
-
-      const customReleaseName = "Patched APKs Bundle";
-
-      const release = await ensureRelease(mainReleaseTag, customReleaseName, customReleaseBody);
-
       for (const apk of patchedApksList) {
-        await uploadPatchedApk(release, apk.path);
-      }
+        // Tag formatı: "YouTube-21.26.360"
+        const releaseTag = `${apk.displayName}-${apk.version}`;
+        const releaseName = `${apk.displayName} v${apk.version}`;
+        
+        let customReleaseBody = `### 📦 ${apk.displayName} Güncellemesi\n\n`;
+        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n\n`;
+        customReleaseBody += `---\n`;
 
-      await uploadMicroGOnce(release);
-      console.log("✅ Release done");
+        // Uygulamanın kaynağına göre sadece ilgili sürüm notunu ekle
+        if (apk.patchSource === "morphe" && morpheNotes) {
+          customReleaseBody += morpheNotes;
+        } else if (apk.patchSource === "piko" && pikoNotes) {
+          customReleaseBody += pikoNotes;
+        }
+
+        // 1. Yeni sürümü GitHub'da oluştur (veya güncelle)
+        const release = await ensureRelease(releaseTag, releaseName, customReleaseBody);
+        
+        // 2. Patched APK'yı o sürüme yükle
+        await uploadPatchedApk(release, apk.path);
+
+        // 3. Eğer uygulama YouTube veya YT Music ise, bu sürüme MicroG'yi de dahil et
+        if (apk.appName === "youtube" || apk.appName === "youtube-music") {
+          await uploadMicroGOnce(release);
+        }
+
+        console.log(`✅ ${apk.displayName} için sürüm yayınlandı: ${releaseTag}`);
+      }
     }
   } catch (err) {
     console.error("❌ Fatal error:", err.message);
