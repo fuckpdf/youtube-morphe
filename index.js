@@ -40,7 +40,6 @@ const APPS_CONFIG = {
     patchSource: "piko",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/x/000000",
-    exclude: ["Dynamic color"],
     enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
   }
 };
