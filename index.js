@@ -42,6 +42,17 @@ const APPS_CONFIG = {
     icon: "https://cdn.simpleicons.org/x/000000",
     exclude: ["Dynamic color"],
     enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
+  },
+  "instagram": {
+    pkg: "com.instagram.android",
+    name: "instagram",
+    patchSource: "piko",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/instagram/E4405F",
+    exclude: [],
+    enable: [],
+    forceVersion: "435.0.0.37.76",
+    forceBuild: "384109456"
   }
 };
 
@@ -49,20 +60,25 @@ async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
 
-  const output = execSync(
-    `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
-    { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
-  );
+  let selectedVersion = config.forceVersion;
 
-  const versions = extractYoutubeVersions(output);
-  if (!versions.length) return null;
+  if (!selectedVersion) {
+    const output = execSync(
+      `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
+      { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
+    );
 
-  const selectedVersion = pickLatestVersion(versions);
+    const versions = extractYoutubeVersions(output);
+    if (!versions.length) return null;
+
+    selectedVersion = pickLatestVersion(versions);
+  }
+
   if (!selectedVersion) return null;
 
   let apkPath;
   try {
-    apkPath = await downloadApk(selectedVersion, config.name);
+    apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
   } catch (e) {
     apkPath = await downloadFromUptodown(selectedVersion, config.name);
   }
@@ -70,7 +86,6 @@ async function processApp(appKey, desktop, patches) {
   let extraArgs = "";
   const argParts = [];
   
-  // CLI motorunun beklediği doğru komutlar: --disable ve --enable
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
