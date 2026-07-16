@@ -49,7 +49,7 @@ const APPS_CONFIG = {
     patchSource: "piko",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/instagram/E4405F",
-    exclude: ["Clone"],
+    exclude: [],
     enable: [],
     forceVersion: "435.0.0.37.76",
     forceBuild: "384109456"
@@ -80,7 +80,22 @@ async function processApp(appKey, desktop, patches) {
   try {
     apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
   } catch (e) {
-    apkPath = await downloadFromUptodown(selectedVersion, config.name);
+    if (appKey === "instagram") {
+      console.log(`⚠️ APKMirror başarısız oldu (${e.message}). Özel GitHub deposundan indiriliyor...`);
+      const customUrl = "https://github.com/fuckpdf/Depo/releases/download/instagram/instagram.apkm";
+      const destPath = path.resolve(process.cwd(), "instagram-base.apkm");
+      
+      execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
+      
+      if (!fs.existsSync(destPath) || fs.statSync(destPath).size < 1000) {
+        throw new Error("Özel depodan indirilen dosya geçersiz.");
+      }
+      apkPath = destPath;
+      console.log(`✅ Instagram base downloaded: ${apkPath}`);
+    } else {
+      console.log(`⚠️ APKMirror hatası, Uptodown deneniyor: ${e.message}`);
+      apkPath = await downloadFromUptodown(selectedVersion, config.name);
+    }
   }
 
   let extraArgs = "";
