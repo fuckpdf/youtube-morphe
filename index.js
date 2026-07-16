@@ -39,7 +39,7 @@ const APPS_CONFIG = {
     pkg: "com.instagram.android",
     name: "instagram",
     patchSource: "piko",
-    exclude: []
+    exclude: ["Clone"]
   }
 };
 
@@ -128,7 +128,7 @@ async function processApp(appKey, desktop, patches) {
       } catch (err) {
         console.error(`❌ ${appKey.toUpperCase()} failed, skipping: ${err.message}`);
       }
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 12000));
     }
 
     if (patchedApksList.length > 0) {
