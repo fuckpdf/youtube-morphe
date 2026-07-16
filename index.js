@@ -3,13 +3,36 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 const { downloadLatestGithubAsset } = require("./lib/github");
-const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
+const { 
+    extractYoutubeVersions, 
+    extractInstagramVersions, 
+    pickLatestVersion, 
+    toApkMirrorVersion 
+} = require("./lib/versions");
 const { downloadApk } = require("./lib/apkmirror");
 const { downloadFromUptodown } = require("./lib/uptodown");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
 
 const APPS_CONFIG = {
+  "instagram": {
+    pkg: "com.instagram.android",
+    name: "instagram",
+    patchSource: "piko",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/instagram/E4405F",
+    exclude: ["Dynamic color"],
+    enable: ["Remove ads", "Download feature"]
+  },
+  "twitter": {
+    pkg: "com.twitter.android",
+    name: "twitter",
+    patchSource: "piko",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/x/000000",
+    exclude: ["Dynamic color"],
+    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
+  },
   "youtube": {
     pkg: "com.google.android.youtube",
     name: "youtube",
@@ -33,15 +56,6 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/reddit/FF4500",
     exclude: []
-  },
-  "twitter": {
-    pkg: "com.twitter.android",
-    name: "twitter",
-    patchSource: "piko",
-    arch: "arm64-v8a",
-    icon: "https://cdn.simpleicons.org/x/000000",
-    exclude: ["Dynamic color"],
-    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
   }
 };
 
@@ -54,11 +68,20 @@ async function processApp(appKey, desktop, patches) {
     { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
   );
 
-  const versions = extractYoutubeVersions(output);
-  if (!versions.length) return null;
+  let versions;
+  let selectedVersion;
 
-  const selectedVersion = pickLatestVersion(versions);
+  if (appKey === 'instagram') {
+    versions = extractInstagramVersions(output);
+    selectedVersion = pickLatestVersion(versions, true);
+  } else {
+    versions = extractYoutubeVersions(output);
+    selectedVersion = pickLatestVersion(versions, false);
+  }
+
   if (!selectedVersion) return null;
+
+  console.log(`🚀 Seçilen Sürüm: ${selectedVersion}`);
 
   let apkPath;
   try {
@@ -70,7 +93,6 @@ async function processApp(appKey, desktop, patches) {
   let extraArgs = "";
   const argParts = [];
   
-  // CLI motorunun beklediği doğru komutlar: --disable ve --enable
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
