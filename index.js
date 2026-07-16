@@ -49,7 +49,7 @@ const APPS_CONFIG = {
     patchSource: "piko",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/instagram/E4405F",
-    exclude: ["Clone"],
+    exclude: [],
     enable: [],
     forceVersion: "435.0.0.37.76",
     forceBuild: "384109456"
@@ -180,11 +180,12 @@ async function processApp(appKey, desktop, patches) {
     }
 
     if (patchedApksList.length > 0) {
+      // Markdown yapısında kesin olarak alt alta listelenmesi için her satır sonuna çift boşluk ve liste yapısı (* ) ekledik
       let customReleaseBody = `### 📦 Derlenen Uygulamalar\n\n`;
 
       patchedApksList.forEach(apk => {
         const displayName = apk.appName.replace(/-/g, ' ').toUpperCase();
-        customReleaseBody += `<img src="${apk.icon}" width="16" height="16"> **${displayName}**: v${apk.version}\n`;
+        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${displayName}**: v${apk.version}  \n`;
       });
 
       customReleaseBody += `\n${combinedReleaseNotes}`;
