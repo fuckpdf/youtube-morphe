@@ -5,9 +5,25 @@ const { execSync } = require("child_process");
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { downloadApk } = require("./lib/apkmirror");
-const { downloadFromUptodown } = require("./lib/uptodown");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
+
+const DISPLAY_NAMES = {
+  "youtube": "YouTube",
+  "youtube-music": "YT.Music",
+  "reddit": "Reddit",
+  "twitter": "Twitter",
+  "instagram": "Instagram"
+};
+
+const PATCH_SOURCE_NAMES = {
+  "morphe": "Morphe",
+  "piko": "Piko"
+};
+
+function cleanVersionTag(tag) {
+  return (tag || "").replace(/^v/i, "");
+}
 
 const APPS_CONFIG = {
   "youtube": {
@@ -81,20 +97,19 @@ async function processApp(appKey, desktop, patches) {
     apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
   } catch (e) {
     if (appKey === "instagram") {
-      console.log(`⚠️ APKMirror başarısız oldu (${e.message}). Özel GitHub deposundan indiriliyor...`);
+      console.log(`⚠️ APKMirror failed (${e.message}). Downloading from custom GitHub repo...`);
       const customUrl = "https://github.com/fuckpdf/Depo/releases/download/instagram/instagram.apkm";
       const destPath = path.resolve(process.cwd(), "instagram-base.apkm");
       
       execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
       
       if (!fs.existsSync(destPath) || fs.statSync(destPath).size < 1000) {
-        throw new Error("Özel depodan indirilen dosya geçersiz.");
+        throw new Error("Downloaded file from custom repo is invalid.");
       }
       apkPath = destPath;
       console.log(`✅ Instagram base downloaded: ${apkPath}`);
     } else {
-      console.log(`⚠️ APKMirror hatası, Uptodown deneniyor: ${e.message}`);
-      apkPath = await downloadFromUptodown(selectedVersion, config.name);
+      throw e;
     }
   }
 
@@ -120,6 +135,7 @@ async function processApp(appKey, desktop, patches) {
   return { 
     appName: config.name, 
     icon: config.icon, 
+    patchSource: config.patchSource,
     name: finalName, 
     path: finalPath, 
     version: selectedVersion 
@@ -136,6 +152,7 @@ async function processApp(appKey, desktop, patches) {
     const desktop = desktopObj.name;
 
     const patchesPool = { morphe: null, piko: null };
+    const patchVersions = { morphe: null, piko: null };
     let combinedReleaseNotes = "";
     let mainReleaseTag = "";
 
@@ -151,8 +168,9 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.morphe = morpheMpp.name;
+      patchVersions.morphe = cleanVersionTag(morpheMpp.tag);
       mainReleaseTag = morpheMpp.tag; 
-      combinedReleaseNotes += `\n---\n### 🟢 Morphe Sürüm Notları (${morpheMpp.tag})\n\n${morpheMpp.body}\n`;
+      combinedReleaseNotes += `\n---\n### 🟢 Morphe Release Notes (${morpheMpp.tag})\n\n${morpheMpp.body}\n`;
     }
 
     const needsPiko = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "piko");
@@ -164,8 +182,9 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.piko = pikoMpp.name;
+      patchVersions.piko = cleanVersionTag(pikoMpp.tag);
       if (!mainReleaseTag) mainReleaseTag = pikoMpp.tag; 
-      combinedReleaseNotes += `\n---\n### ✖️ Piko Sürüm Notları (${pikoMpp.tag})\n\n${pikoMpp.body}\n`;
+      combinedReleaseNotes += `\n---\n### ✖️ Piko Release Notes (${pikoMpp.tag})\n\n${pikoMpp.body}\n`;
     }
 
     const patchedApksList = [];
@@ -180,12 +199,14 @@ async function processApp(appKey, desktop, patches) {
     }
 
     if (patchedApksList.length > 0) {
-      // Markdown yapısında kesin olarak alt alta listelenmesi için her satır sonuna çift boşluk ve liste yapısı (* ) ekledik
-      let customReleaseBody = `### 📦 Derlenen Uygulamalar\n\n`;
+      let customReleaseBody = `### 📦 Built Applications\n\n`;
 
       patchedApksList.forEach(apk => {
-        const displayName = apk.appName.replace(/-/g, ' ').toUpperCase();
-        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${displayName}**: v${apk.version}  \n`;
+        const displayName = DISPLAY_NAMES[apk.appName] || apk.appName;
+        const patchName = PATCH_SOURCE_NAMES[apk.patchSource] || apk.patchSource;
+        const patchVersion = patchVersions[apk.patchSource] || "";
+        const fullLabel = `${displayName}-${apk.version}-${patchName}-${patchVersion}`;
+        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${fullLabel}**  \n`;
       });
 
       customReleaseBody += `\n${combinedReleaseNotes}`;
