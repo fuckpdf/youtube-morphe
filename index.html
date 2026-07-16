@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Automatically built and patched APKs, updated via GitHub Actions.">
     <title>Patched APKs Hub</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Markdown renderer for release notes -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- HTML sanitizer: release notes come partly from third-party repos (Morphe, Piko) we don't control,
-         so their rendered markdown MUST be sanitized before being inserted into the page to prevent XSS. -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 
     <script>
@@ -72,19 +68,21 @@
         .markdown-body hr { border-color: rgba(255,255,255,0.1); margin: 1.5rem 0; }
         .markdown-body a { color: #38bdf8; text-decoration: none; transition: color 0.2s; }
         .markdown-body a:hover { color: #7dd3fc; text-decoration: underline; }
+        
+        /* Daraltılabilir Sürüm Notları İçin Stil Eklentisi */
+        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; }
+        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500/30">
 
     <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col transition-all duration-300">
-        <!-- Filled by JS -->
-    </div>
+        </div>
 
     <script>
         const REPO = "fuckpdf/youtube-morphe";
-        const CACHE_KEY = "patched-apks-cache-v1";
-        const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes — avoids burning the unauthenticated
-                                             // GitHub API rate limit (60 req/hour/IP) on repeat visits
+        const CACHE_KEY = "patched-apks-cache-v2";
+        const CACHE_TTL_MS = 5 * 60 * 1000; 
 
         const ICONS = {
             "youtube": "https://cdn.simpleicons.org/youtube/FF0000",
@@ -108,11 +106,6 @@
 
         const root = document.getElementById('app');
 
-        // --- Security helpers -------------------------------------------------
-        // Escapes any dynamic string before it's interpolated into innerHTML.
-        // Defense-in-depth: even though most values here come from our own
-        // trusted maps, asset names / tag names ultimately originate from
-        // GitHub release data, which should never be trusted implicitly.
         function escapeHtml(str) {
             const div = document.createElement('div');
             div.textContent = String(str ?? '');
@@ -125,7 +118,6 @@
             return DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
         }
 
-        // --- Caching (reduces API calls, protects against rate limiting) ------
         function readCache() {
             try {
                 const raw = sessionStorage.getItem(CACHE_KEY);
@@ -141,12 +133,9 @@
         function writeCache(data) {
             try {
                 sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
-            } catch {
-                // sessionStorage may be unavailable (private mode etc.) — non-fatal
-            }
+            } catch {}
         }
 
-        // --- Rendering ----------------------------------------------------------
         function renderSkeleton() {
             root.innerHTML = `
                 <header class="text-center mb-10 pt-6 animate-pulse">
@@ -184,9 +173,7 @@
             document.getElementById('retry-btn')?.addEventListener('click', () => init(true));
         }
 
-        function renderApp(latestRelease, appDataHTML, changelogHTML) {
-            const date = new Date(latestRelease.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-
+        function renderApp(latestDate, appDataHTML, changelogHTML) {
             root.innerHTML = `
                 <header class="text-center mb-10 pt-6 animate-fade-in">
                     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-blue-500 to-purple-500">
@@ -198,11 +185,11 @@
                 <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.1s;">
                     <div>
                         <h2 class="text-lg font-semibold text-white">Active Build Status</h2>
-                        <p class="text-sm text-slate-400">Last updated: ${escapeHtml(date)}</p>
+                        <p class="text-sm text-slate-400">Last updated: ${escapeHtml(latestDate)}</p>
                     </div>
                     <span class="px-4 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full font-mono text-sm font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(56,189,248,0.15)]">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        ${escapeHtml(latestRelease.tag_name)}
+                        Multi-Release System
                     </span>
                 </div>
 
@@ -214,7 +201,7 @@
                 <div class="animate-fade-in" style="animation-delay: 0.3s;">
                     <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                         <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Release Notes
+                        Latest Release Notes
                     </h2>
                     <div class="glass-panel rounded-2xl p-6 md:p-8 markdown-body text-sm md:text-base">
                         ${changelogHTML}
@@ -229,20 +216,6 @@
             `;
         }
 
-        // Extracts "Morphe-1.35.0" / "Piko-3.8.0-dev.4" style patch info from the
-        // release body, using the known "DisplayName-AppVersion-" prefix that
-        // index.js writes for each app's bullet line.
-        function extractPatchInfo(body, displayName, appVersion) {
-            if (!body || !appVersion) return null;
-            const prefix = `${displayName}-${appVersion}-`;
-            const idx = body.indexOf(prefix);
-            if (idx === -1) return null;
-            const after = body.slice(idx + prefix.length);
-            const endIdx = after.indexOf('**');
-            if (endIdx === -1) return null;
-            return after.slice(0, endIdx).trim();
-        }
-
         function renderAppCard(appKey, app, delay) {
             const displayName = DISPLAY_NAMES[appKey] || appKey;
 
@@ -254,13 +227,16 @@
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-slate-400 tracking-tight">${escapeHtml(displayName)}</h3>
-                            <p class="text-slate-500 text-xs sm:text-sm font-medium">Not updated in this release</p>
+                            <p class="text-slate-500 text-xs sm:text-sm font-medium">Not found</p>
                         </div>
                     </div>
                 `;
             }
 
-            const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${encodeURIComponent(appKey)}`;
+            // Regex for Obtainium specifically targetting the exact App Name format to prevent infinite loops
+            let filenameFilter = app.name.replace(".apk", "");
+            if (appKey === "microg") filenameFilter = "MicroG";
+            const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${encodeURIComponent(filenameFilter)}`;
 
             return `
                 <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:border-slate-600 animate-fade-in group" style="animation-delay: ${delay}s;">
@@ -271,7 +247,6 @@
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-white tracking-tight">${escapeHtml(app.displayName)}</h3>
                             <p class="text-slate-400 text-xs sm:text-sm font-medium">${escapeHtml(app.versionText)}</p>
-                            ${app.patchInfo ? `<p class="text-slate-500 text-xs mt-0.5">${escapeHtml(app.patchInfo)}</p>` : ''}
                         </div>
                     </div>
                     
@@ -331,42 +306,57 @@
                     return renderError("No published APK bundle found yet.");
                 }
 
-                const latestRelease = releases[0];
-                const assets = latestRelease.assets || [];
                 const appData = {};
+                let combinedChangelog = "";
+                let latestDate = null;
+                let parsedReleaseIds = new Set();
 
-                assets.forEach(asset => {
-                    if (!asset.name.endsWith('.apk')) return;
-
-                    let appKey = "microg";
-                    if (asset.name.includes("youtube-music")) appKey = "youtube-music";
-                    else if (asset.name.includes("youtube")) appKey = "youtube";
-                    else if (asset.name.includes("reddit")) appKey = "reddit";
-                    else if (asset.name.includes("twitter")) appKey = "twitter";
-                    else if (asset.name.includes("instagram")) appKey = "instagram";
-
-                    const icon = ICONS[appKey] || ICONS["microg"];
-                    const displayName = DISPLAY_NAMES[appKey] || asset.name;
-
-                    let versionText = "GmsCore / Support component";
-                    let rawVersionOnly = null;
-                    const cleanName = asset.name.replace("-patched", "").replace(".apk", "").replace(".apkm", "");
-
-                    if (appKey !== "microg") {
-                        const rawVersion = cleanName.substring(appKey.length + 1);
-                        if (rawVersion) {
-                            rawVersionOnly = rawVersion;
-                            versionText = "v" + rawVersion;
-                        }
-                    } else {
-                        versionText = "v" + cleanName.replace("microg-", "");
+                // Yeni Sistem: Tüm Sürümleri (Releases) tarayarak en güncel olanları eşleştirir.
+                releases.forEach(release => {
+                    if (!latestDate) {
+                        latestDate = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
                     }
 
-                    const patchInfo = rawVersionOnly
-                        ? extractPatchInfo(latestRelease.body, displayName, rawVersionOnly)
-                        : null;
+                    (release.assets || []).forEach(asset => {
+                        if (!asset.name.endsWith('.apk')) return;
 
-                    appData[appKey] = { displayName, icon, versionText, patchInfo, downloadUrl: asset.browser_download_url };
+                        let appKey = null;
+                        
+                        // Yeni isimlendirme kurallarına göre eşleştirme (Örn: YT.Music-9.26.51.apk)
+                        if (asset.name.startsWith("YT.Music-")) appKey = "youtube-music";
+                        else if (asset.name.startsWith("YouTube-")) appKey = "youtube";
+                        else if (asset.name.startsWith("Reddit-")) appKey = "reddit";
+                        else if (asset.name.startsWith("Twitter-")) appKey = "twitter";
+                        else if (asset.name.startsWith("Instagram-")) appKey = "instagram";
+                        else if (asset.name === "MicroG.apk") appKey = "microg";
+
+                        // Bu uygulamayı ilk defa buluyorsak (yani en güncel sürümse) kaydet
+                        if (appKey && !appData[appKey]) {
+                            const icon = ICONS[appKey];
+                            const displayName = DISPLAY_NAMES[appKey];
+                            
+                            let versionText = "GmsCore / Support component";
+                            if (appKey !== "microg") {
+                                // Sürüm numarasını isminden ayıkla (Örn: YouTube-21.26.360.apk -> 21.26.360)
+                                const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
+                                versionText = "v" + rawVersion;
+                            }
+
+                            appData[appKey] = { 
+                                name: asset.name,
+                                displayName, 
+                                icon, 
+                                versionText, 
+                                downloadUrl: asset.browser_download_url 
+                            };
+
+                            // Sürüm notlarını birleştir (MicroG hariç)
+                            if (appKey !== "microg" && release.body && !parsedReleaseIds.has(release.id)) {
+                                combinedChangelog += `${release.body}\n\n<hr>\n\n`;
+                                parsedReleaseIds.add(release.id);
+                            }
+                        }
+                    });
                 });
 
                 let appDataHTML = '';
@@ -377,9 +367,9 @@
                     delay += 0.05;
                 });
 
-                const changelogHTML = latestRelease.body ? safeMarkdown(latestRelease.body) : null;
+                const changelogHTML = combinedChangelog ? safeMarkdown(combinedChangelog) : null;
 
-                renderApp(latestRelease, appDataHTML, changelogHTML);
+                renderApp(latestDate, appDataHTML, changelogHTML);
 
             } catch (error) {
                 console.error(error);
