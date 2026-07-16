@@ -14,24 +14,28 @@ const APPS_CONFIG = {
     pkg: "com.google.android.youtube",
     name: "youtube",
     patchSource: "morphe",
+    icon: "https://cdn.simpleicons.org/youtube/FF0000",
     exclude: []
   },
   "youtube-music": {
     pkg: "com.google.android.apps.youtube.music",
     name: "youtube-music",
     patchSource: "morphe",
+    icon: "https://cdn.simpleicons.org/youtubemusic/FF0000",
     exclude: []
   },
   "reddit": {
     pkg: "com.reddit.frontpage",
     name: "reddit",
     patchSource: "morphe",
+    icon: "https://cdn.simpleicons.org/reddit/FF4500",
     exclude: []
   },
   "twitter": {
     pkg: "com.twitter.android",
     name: "twitter",
     patchSource: "piko",
+    icon: "https://cdn.simpleicons.org/x/000000",
     exclude: ["Dynamic color"],
     enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
   }
@@ -61,11 +65,12 @@ async function processApp(appKey, desktop, patches) {
 
   let extraArgs = "";
   const argParts = [];
+  
   if (config.exclude && config.exclude.length > 0) {
-    argParts.push(...config.exclude.map(p => `--disable "${p}"`));
+    argParts.push(...config.exclude.map(p => `--exclude "${p}"`));
   }
   if (config.enable && config.enable.length > 0) {
-    argParts.push(...config.enable.map(p => `--enable "${p}"`));
+    argParts.push(...config.enable.map(p => `--include "${p}"`));
   }
   extraArgs = argParts.join(" ");
 
@@ -77,7 +82,13 @@ async function processApp(appKey, desktop, patches) {
   const finalPath = path.join(process.cwd(), finalName);
   fs.copyFileSync(actualPatched, finalPath);
 
-  return { name: finalName, path: finalPath, version: selectedVersion };
+  return { 
+    appName: config.name, 
+    icon: config.icon, 
+    name: finalName, 
+    path: finalPath, 
+    version: selectedVersion 
+  };
 }
 
 (async () => {
@@ -90,29 +101,38 @@ async function processApp(appKey, desktop, patches) {
     const desktop = desktopObj.name;
 
     const patchesPool = { morphe: null, piko: null };
-    let releaseTag = "";
-    let releaseBody = "";
-
-    const morpheMpp = await downloadLatestGithubAsset({
-      owner: "MorpheApp",
-      repo: "morphe-patches",
-      prerelease: true,
-      match: (n) => n.endsWith(".mpp"),
-    });
-    patchesPool.morphe = morpheMpp.name;
-    releaseTag = morpheMpp.tag;
-    releaseBody = morpheMpp.body;
-
-    const pikoMpp = await downloadLatestGithubAsset({
-      owner: "crimera",
-      repo: "piko",
-      prerelease: true,
-      match: (n) => n.endsWith(".mpp"),
-    });
-    patchesPool.piko = pikoMpp.name;
+    let combinedReleaseNotes = "";
+    let mainReleaseTag = "";
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? Object.keys(APPS_CONFIG) : [targetApp];
+
+    const needsMorphe = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "morphe");
+    if (needsMorphe) {
+      const morpheMpp = await downloadLatestGithubAsset({
+        owner: "MorpheApp",
+        repo: "morphe-patches",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.morphe = morpheMpp.name;
+      mainReleaseTag = morpheMpp.tag; 
+      combinedReleaseNotes += `\n---\n### 🟢 Morphe Sürüm Notları (${morpheMpp.tag})\n\n${morpheMpp.body}\n`;
+    }
+
+    const needsPiko = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "piko");
+    if (needsPiko) {
+      const pikoMpp = await downloadLatestGithubAsset({
+        owner: "crimera",
+        repo: "piko",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.piko = pikoMpp.name;
+      if (!mainReleaseTag) mainReleaseTag = pikoMpp.tag; 
+      combinedReleaseNotes += `\n---\n### ✖️ Piko Sürüm Notları (${pikoMpp.tag})\n\n${pikoMpp.body}\n`;
+    }
+
     const patchedApksList = [];
 
     for (const appKey of appsToProcess) {
@@ -125,13 +145,19 @@ async function processApp(appKey, desktop, patches) {
     }
 
     if (patchedApksList.length > 0) {
-      let customReleaseBody = `### 📦 Derlenen Uygulamalar\n`;
-      patchedApksList.forEach(apk => {
-        customReleaseBody += `* **${apk.name.split('-')[0].toUpperCase()}**: v${apk.version}\n`;
-      });
-      customReleaseBody += `\n---\n### Sürüm Detayları (${releaseTag})\n\n${releaseBody}`;
+      let customReleaseBody = `### 📦 Derlenen Uygulamalar\n\n`;
 
-      const release = await ensureRelease(releaseTag, customReleaseBody);
+      patchedApksList.forEach(apk => {
+        const displayName = apk.appName.replace(/-/g, ' ').toUpperCase();
+        customReleaseBody += `<img src="${apk.icon}" width="16" height="16"> **${displayName}**: v${apk.version}\n`;
+      });
+
+      customReleaseBody += `\n${combinedReleaseNotes}`;
+
+      // En sade ve net başlığımız
+      const customReleaseName = "Patched APKs Bundle";
+
+      const release = await ensureRelease(mainReleaseTag, customReleaseName, customReleaseBody);
 
       for (const apk of patchedApksList) {
         await uploadPatchedApk(release, apk.path);
