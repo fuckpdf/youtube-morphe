@@ -14,6 +14,7 @@
             --text-muted: #8b949e;
             --accent-color: #58a6ff;
             --success-color: #2ea44f;
+            --obtainium-color: #007acc;
             --border-color: #30363d;
         }
 
@@ -102,12 +103,6 @@
             margin-bottom: 2rem;
         }
 
-        @media (min-width: 600px) {
-            .apps-list {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
         .app-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -119,11 +114,20 @@
             transition: transform 0.2s, border-color 0.2s;
             text-decoration: none;
             color: inherit;
+            flex-wrap: wrap;
         }
 
         .app-card:hover {
             transform: translateY(-2px);
             border-color: var(--accent-color);
+        }
+
+        .app-main-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 200px;
         }
 
         .app-icon {
@@ -159,6 +163,12 @@
             color: var(--text-muted);
         }
 
+        .actions-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         .download-btn {
             background-color: var(--success-color);
             color: #fff;
@@ -174,8 +184,32 @@
             transition: opacity 0.2s;
         }
 
-        .download-btn:hover {
-            opacity: 0.9;
+        /* Şık Obtainium Buton Tasarımı */
+        .obtainium-btn {
+            background-color: #1f2937;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s, border-color 0.2s;
+            width: 38px;
+            height: 38px;
+        }
+
+        .obtainium-btn:hover {
+            background-color: rgba(0, 122, 204, 0.15);
+            border-color: var(--obtainium-color);
+        }
+
+        .obtainium-btn img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
         }
 
         /* Sürüm Notları (Changelog) Tasarımı */
@@ -342,12 +376,10 @@
                     const icon = ICONS[appKey] || ICONS["microg"];
                     const displayName = DISPLAY_NAMES[appKey] || asset.name;
                     
-                    // Sürüm numarasını yakalama mantığı güncellendi
                     let versionText = "GmsCore / Destekleyici";
                     const cleanName = asset.name.replace("-patched", "").replace(".apk", "").replace(".apkm", "");
                     
                     if (appKey !== "microg") {
-                        // Dosya adındaki appKey kelimesini ve tireleri temizleyerek sadece sürümü alıyoruz (Örn: twitter-12.7.1-release.0 -> 12.7.1-release.0)
                         const rawVersion = cleanName.substring(appKey.length + 1);
                         if (rawVersion) {
                             versionText = "Sürüm: " + rawVersion;
@@ -368,16 +400,30 @@
                     const app = appData[appKey];
                     if (!app) return;
 
+                    // Her bir uygulama için dinamik Obtainium derin bağlantısı (deep link) üretiyoruz
+                    // Kullanıcı tıkladığında Obtainium doğrudan bu uygulamayı takibe alacak ayarla açılır.
+                    const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${appKey}`;
+
                     html += `
                         <div class="app-card">
-                            <div class="app-icon">
-                                <img src="${app.icon}" alt="${app.displayName}">
+                            <div class="app-main-info">
+                                <div class="app-icon">
+                                    <img src="${app.icon}" alt="${app.displayName}">
+                                </div>
+                                <div class="app-info">
+                                    <div class="app-name">${app.displayName}</div>
+                                    <div class="app-version">${app.versionText}</div>
+                                </div>
                             </div>
-                            <div class="app-info">
-                                <div class="app-name">${app.displayName}</div>
-                                <div class="app-version">${app.versionText}</div>
+                            <div class="actions-wrapper">
+                                <!-- Şık yeşil renkli klasik indirme butonu -->
+                                <a href="${app.downloadUrl}" class="download-btn">İndir</a>
+                                
+                                <!-- Mavi detaylı, şık Obtainium ikonu/butonu -->
+                                <a href="${obtainiumUrl}" class="obtainium-btn" title="Obtainium'a Ekle">
+                                    <img src="https://cdn.simpleicons.org/dependabot/007ACC" alt="Obtainium">
+                                </a>
                             </div>
-                            <a href="${app.downloadUrl}" class="download-btn">İndir</a>
                         </div>
                     `;
                 });
