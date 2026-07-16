@@ -14,6 +14,7 @@ const APPS_CONFIG = {
     pkg: "com.google.android.youtube",
     name: "youtube",
     patchSource: "morphe",
+    arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/youtube/FF0000",
     exclude: []
   },
@@ -21,6 +22,7 @@ const APPS_CONFIG = {
     pkg: "com.google.android.apps.youtube.music",
     name: "youtube-music",
     patchSource: "morphe",
+    arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/youtubemusic/FF0000",
     exclude: []
   },
@@ -28,6 +30,7 @@ const APPS_CONFIG = {
     pkg: "com.reddit.frontpage",
     name: "reddit",
     patchSource: "morphe",
+    arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/reddit/FF4500",
     exclude: []
   },
@@ -35,6 +38,7 @@ const APPS_CONFIG = {
     pkg: "com.twitter.android",
     name: "twitter",
     patchSource: "piko",
+    arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/x/000000",
     exclude: ["Dynamic color"],
     enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
@@ -74,7 +78,8 @@ async function processApp(appKey, desktop, patches) {
   }
   extraArgs = argParts.join(" ");
 
-  const actualPatched = patchApk(desktop, patches, apkPath, extraArgs);
+  // config.arch parametresi doğrudan patchApk'ya gönderiliyor
+  const actualPatched = patchApk(desktop, patches, apkPath, extraArgs, config.arch);
 
   if (!fs.existsSync(actualPatched)) return null;
 
@@ -154,7 +159,6 @@ async function processApp(appKey, desktop, patches) {
 
       customReleaseBody += `\n${combinedReleaseNotes}`;
 
-      // En sade ve net başlığımız
       const customReleaseName = "Patched APKs Bundle";
 
       const release = await ensureRelease(mainReleaseTag, customReleaseName, customReleaseBody);
