@@ -49,7 +49,7 @@ const APPS_CONFIG = {
     patchSource: "piko",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/instagram/E4405F",
-    exclude: [],
+    exclude: ["Clone"],
     enable: [],
     forceVersion: "435.0.0.37.76",
     forceBuild: "384109456"
