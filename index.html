@@ -3,60 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Automatically built and patched APKs, updated via GitHub Actions.">
     <title>Patched APKs Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <style>
-        body { background-color: #000000; color: #f8fafc; }
-        .glass-panel { background: #000000; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glass-panel:hover { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 0 15px rgba(56, 189, 248, 0.1); }
-        .glass-panel-muted { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.1); }
+        :root { --accent: #38bdf8; }
+
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace !important; }
+
+        body {
+            background-color: #030304;
+            color: #f4f4f5;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .ambient span {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(120px);
+            opacity: 0.16;
+        }
+        .ambient .b1 { width: 480px; height: 480px; top: -120px; left: -100px; background: #ff2d55; }
+        .ambient .b2 { width: 520px; height: 520px; top: 10%; right: -160px; background: #1d9bf0; }
+        .ambient .b3 { width: 460px; height: 460px; bottom: -140px; left: 20%; background: #e1306c; }
+
+        #app { position: relative; z-index: 1; }
+
+        .glass-panel {
+            background: rgba(12, 12, 14, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+        }
+        .glass-panel-muted { background: rgba(255,255,255,0.015); border: 1px dashed rgba(255, 255, 255, 0.1); }
+
+        .app-card:hover { transform: translateY(-3px); }
+        .app-card .icon-well { transition: transform 0.35s ease, background 0.35s ease; }
+        .app-card:hover .icon-well { transform: scale(1.06) rotate(-2deg); }
+
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #000000; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #374151; }
-        .markdown-body h3 { font-size: 1.25rem; font-weight: 600; color: #fff; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .shimmer {
+            background: linear-gradient(90deg, #0c0c0e 0%, #1c1c20 50%, #0c0c0e 100%);
+            background-size: 800px 100%;
+            animation: shimmer 1.6s infinite linear;
+        }
+
+        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+        .markdown-body h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 1.75rem; margin-bottom: 0.6rem; letter-spacing: -0.01em; }
         .markdown-body h3:first-child { margin-top: 0; }
-        .markdown-body p { margin-bottom: 1rem; color: #9ca3af; }
-        .markdown-body ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; color: #9ca3af; }
-        .markdown-body li { margin-bottom: 0.25rem; }
-        .markdown-body hr { border-color: rgba(255,255,255,0.1); margin: 1.5rem 0; }
-        .markdown-body a { color: #38bdf8; text-decoration: none; transition: color 0.2s; }
-        .markdown-body a:hover { color: #7dd3fc; text-decoration: underline; }
-        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; background: #000000; }
-        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; padding: 4px; color: #e5e7eb; }
+        .markdown-body p { margin-bottom: 1rem; color: #a1a1aa; line-height: 1.65; }
+        .markdown-body ul { list-style: none; padding-left: 0; margin-bottom: 1rem; color: #a1a1aa; }
+        .markdown-body li { margin-bottom: 0.4rem; padding-left: 1.3rem; position: relative; line-height: 1.55; }
+        .markdown-body li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 6px; height: 6px; border-radius: 9999px; background: var(--accent); opacity: 0.7; }
+        .markdown-body hr { border-color: rgba(255,255,255,0.08); margin: 1.75rem 0; }
+        .markdown-body a { color: #7dd3fc; text-decoration: none; border-bottom: 1px solid rgba(125,211,252,0.25); transition: border-color 0.2s, color 0.2s; }
+        .markdown-body a:hover { color: #bae6fd; border-color: rgba(186,230,253,0.6); }
+        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; color: #e4e4e7; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500/30">
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30">
 
-    <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col transition-all duration-300">
+    <div class="ambient"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+
+    <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col">
         <template v-if="loading">
-            <header class="text-center mb-10 pt-6 animate-pulse">
-                <div class="h-10 bg-zinc-900 rounded-lg w-3/4 md:w-1/2 mx-auto mb-4"></div>
-                <div class="h-4 bg-zinc-900 rounded-lg w-1/2 md:w-1/3 mx-auto"></div>
+            <header class="text-center mb-10 pt-8">
+                <div class="h-11 shimmer rounded-xl w-3/4 md:w-1/2 mx-auto mb-4"></div>
+                <div class="h-4 shimmer rounded-lg w-1/2 md:w-1/3 mx-auto"></div>
             </header>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-                <div v-for="i in 6" :key="i" class="glass-panel p-5 rounded-2xl flex items-center gap-4 animate-pulse">
-                    <div class="w-14 h-14 bg-zinc-900 rounded-xl"></div>
+                <div v-for="i in 6" :key="i" class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-14 h-14 shimmer rounded-xl"></div>
                     <div class="flex-1 space-y-2">
-                        <div class="h-5 bg-zinc-900 rounded w-1/2"></div>
-                        <div class="h-3 bg-zinc-900 rounded w-1/3"></div>
+                        <div class="h-5 shimmer rounded w-1/2"></div>
+                        <div class="h-3 shimmer rounded w-1/3"></div>
                     </div>
-                    <div class="w-20 h-10 bg-zinc-900 rounded-xl"></div>
+                    <div class="w-24 h-10 shimmer rounded-xl"></div>
                 </div>
             </div>
         </template>
 
         <template v-else-if="errorMsg">
             <div class="flex flex-col items-center justify-center flex-grow animate-fade-in">
-                <div class="glass-panel p-8 rounded-2xl text-center max-w-md border-red-900/50">
-                    <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <h2 class="text-xl font-bold text-white mb-2">{{ isRateLimit ? 'Rate Limited' : 'Connection Error' }}</h2>
-                    <p class="text-gray-400 text-sm mb-6">{{ errorMsg }}</p>
-                    <button @click="init()" class="bg-blue-900/30 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-800/50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+                <div class="glass-panel p-8 rounded-2xl text-center max-w-md border-red-900/40">
+                    <svg class="w-14 h-14 text-red-500/90 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <h2 class="text-xl font-bold text-white mb-2 tracking-tight">{{ isRateLimit ? 'Rate Limited' : 'Connection Error' }}</h2>
+                    <p class="text-zinc-500 text-sm mb-6">{{ errorMsg }}</p>
+                    <button @click="init()" class="bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white border border-sky-500/25 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
                         Retry
                     </button>
                 </div>
@@ -64,42 +122,56 @@
         </template>
 
         <template v-else>
-            <header class="text-center mb-10 pt-6 animate-fade-in">
-                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">
+            <header class="text-center mb-10 pt-8 animate-fade-in">
+                <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-xs font-medium text-zinc-400 tracking-wide">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Live &middot; Auto-updated by GitHub Actions
+                </div>
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-500">
                     Patched APKs Hub
                 </h1>
-                <p class="text-gray-500 text-lg">Latest builds patched with Morphe & Piko</p>
+                <p class="text-zinc-500 text-lg">Latest builds patched with Morphe &amp; Piko</p>
             </header>
 
-            <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.1s;">
+            <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.08s;">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-200">Active Build Status</h2>
-                    <p class="text-sm text-gray-500">Last updated: {{ latestDate }}</p>
+                    <h2 class="text-base font-semibold text-zinc-200">Active Build Status</h2>
+                    <p class="text-sm text-zinc-500">Last updated: {{ latestDate }}</p>
                 </div>
-                <span class="px-4 py-1.5 bg-blue-900/20 text-blue-400 border border-blue-900/50 rounded-full font-mono text-sm font-bold flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                    Unified Release System
+                <span class="px-4 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/25 rounded-full font-mono text-xs font-bold flex items-center gap-2 tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                    UNIFIED RELEASE
                 </span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
                 <template v-for="(appKey, index) in ORDER" :key="appKey">
-                    <div v-if="appData[appKey]" class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-sky-900/20 animate-fade-in group" :style="{ animationDelay: `${0.15 + (index * 0.05)}s` }">
+                    <div v-if="appData[appKey]"
+                         class="app-card glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-fade-in group"
+                         :style="{ animationDelay: `${0.14 + (index * 0.06)}s`, '--accent': ACCENTS[appKey] }"
+                         @mouseenter="$event.currentTarget.style.borderColor = ACCENTS[appKey] + '55'; $event.currentTarget.style.boxShadow = '0 12px 40px -12px ' + ACCENTS[appKey] + '33'"
+                         @mouseleave="$event.currentTarget.style.borderColor = ''; $event.currentTarget.style.boxShadow = ''">
                         <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
-                            <div class="w-14 h-14 bg-[#0a0a0a] rounded-xl flex items-center justify-center p-2.5 border border-white/5 transition-colors group-hover:border-white/10">
-                                <img :src="appData[appKey].icon" :alt="appData[appKey].displayName" class="w-full h-full object-contain filter drop-shadow-md">
+                            <div class="icon-well w-14 h-14 rounded-xl flex items-center justify-center p-2.5 border border-white/5"
+                                 :style="{ background: `radial-gradient(circle at 30% 20%, ${ACCENTS[appKey]}22, #0a0a0b)` }">
+                                <img :src="appData[appKey].icon" :alt="appData[appKey].displayName" class="w-full h-full object-contain">
                             </div>
                             <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-100 tracking-tight">{{ appData[appKey].displayName }}</h3>
-                                <p class="text-gray-500 text-xs sm:text-sm font-medium">{{ appData[appKey].versionText }}</p>
+                                <h3 class="text-lg font-bold text-zinc-100 tracking-tight">{{ appData[appKey].displayName }}</h3>
+                                <p class="text-zinc-500 text-xs sm:text-sm font-mono">{{ appData[appKey].versionText }}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-                            <a :href="appData[appKey].downloadUrl" class="flex-1 sm:flex-none bg-emerald-900/20 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-900/50 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all text-center">
+                            <a :href="appData[appKey].downloadUrl"
+                               class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-semibold text-sm text-center transition-all border"
+                               :style="{ color: ACCENTS[appKey], borderColor: ACCENTS[appKey] + '40', background: ACCENTS[appKey] + '14' }"
+                               onmouseover="this.style.background=this.style.borderColor.replace('40','cc'); this.style.color='#fff';"
+                               :onmouseleave="`this.style.background='${ACCENTS[appKey]}14'; this.style.color='${ACCENTS[appKey]}';`">
                                 Download
                             </a>
-                            <a :href="getObtainiumUrl(appKey)" title="Track with Obtainium" class="flex items-center justify-center bg-blue-900/20 text-blue-500 hover:bg-blue-600 hover:text-white border border-blue-900/50 w-11 h-11 rounded-xl transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <a :href="getObtainiumUrl(appKey)" title="Track with Obtainium"
+                               class="flex items-center justify-center bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/10 border border-white/10 w-11 h-11 rounded-xl transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="23 4 23 10 17 10"></polyline>
                                     <polyline points="1 20 1 14 7 14"></polyline>
                                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 3.51 15"></path>
@@ -107,29 +179,31 @@
                             </a>
                         </div>
                     </div>
-                    <div v-else class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-50 animate-fade-in" :style="{ animationDelay: `${0.15 + (index * 0.05)}s` }">
-                        <div class="w-14 h-14 bg-[#0a0a0a] rounded-xl flex items-center justify-center p-2.5 border border-white/5">
+                    <div v-else class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-50 animate-fade-in" :style="{ animationDelay: `${0.14 + (index * 0.06)}s` }">
+                        <div class="w-14 h-14 bg-[#0a0a0b] rounded-xl flex items-center justify-center p-2.5 border border-white/5">
                             <img :src="ICONS[appKey]" :alt="DISPLAY_NAMES[appKey]" class="w-full h-full object-contain grayscale opacity-30">
                         </div>
                         <div class="flex-1">
-                            <h3 class="text-lg font-bold text-gray-500 tracking-tight">{{ DISPLAY_NAMES[appKey] }}</h3>
-                            <p class="text-gray-600 text-xs sm:text-sm font-medium">Not found</p>
+                            <h3 class="text-lg font-bold text-zinc-600 tracking-tight">{{ DISPLAY_NAMES[appKey] }}</h3>
+                            <p class="text-zinc-700 text-xs sm:text-sm font-medium">Not found</p>
                         </div>
                     </div>
                 </template>
             </div>
 
-            <div v-if="changelogHTML" class="animate-fade-in" style="animation-delay: 0.3s;">
-                <h2 class="text-2xl font-bold text-gray-200 mb-4 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <div v-if="changelogHTML" class="animate-fade-in" style="animation-delay: 0.32s;">
+                <h2 class="text-2xl font-bold text-zinc-100 mb-4 flex items-center gap-2.5 tracking-tight">
+                    <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Latest Release Notes
                 </h2>
                 <div class="glass-panel rounded-2xl p-6 md:p-8 markdown-body text-sm md:text-base" v-html="changelogHTML"></div>
             </div>
 
-            <footer class="mt-16 pb-8 text-center text-gray-600 text-sm animate-fade-in" style="animation-delay: 0.4s;">
+            <footer class="mt-16 pb-8 text-center text-zinc-600 text-sm animate-fade-in" style="animation-delay: 0.4s;">
                 <p>Automatically built via GitHub Actions.</p>
-                <p class="mt-1">Source code: <a :href="'https://github.com/' + REPO" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white hover:underline transition-colors">youtube-morphe</a></p>
+                <p class="mt-1">Source code:
+                    <a :href="'https://github.com/' + REPO" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white hover:underline transition-colors">youtube-morphe</a>
+                </p>
             </footer>
         </template>
     </div>
@@ -159,6 +233,15 @@
                     "microg": "MicroG (GmsCore)"
                 };
 
+                const ACCENTS = {
+                    "youtube": "#ff3b3b",
+                    "youtube-music": "#ff6b95",
+                    "reddit": "#ff5700",
+                    "twitter": "#1d9bf0",
+                    "instagram": "#e1306c",
+                    "microg": "#34a853"
+                };
+
                 const ORDER = ["youtube", "youtube-music", "instagram", "twitter", "reddit", "microg"];
 
                 const loading = ref(true);
@@ -168,18 +251,17 @@
                 const appData = ref({});
                 const changelogHTML = ref(null);
 
-                // --- TEK SÜRÜM ODAKLI YENİ OBTAINIUM FİLTRELERİ ---
                 const getObtainiumUrl = (appKey) => {
                     let apkFilter = "";
-                    let releaseFilter = "latest"; // Artık tüm uygulamalar tek release içinde
+                    const releaseFilter = "latest";
 
                     if (appKey === "youtube") { apkFilter = "YouTube-.*\\.apk"; }
                     else if (appKey === "youtube-music") { apkFilter = "YT\\.Music-.*\\.apk"; }
                     else if (appKey === "instagram") { apkFilter = "Instagram-.*\\.apk"; }
                     else if (appKey === "twitter") { apkFilter = "Twitter-.*\\.apk"; }
                     else if (appKey === "reddit") { apkFilter = "Reddit-.*\\.apk"; }
-                    else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; } 
-                    
+                    else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; }
+
                     return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(apkFilter)}&releaseTitleFilterRegEx=${encodeURIComponent(releaseFilter)}`;
                 };
 
@@ -190,13 +272,18 @@
                     try {
                         const response = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/latest`, {
                             headers: { "Accept": "application/vnd.github+json" },
-                            cache: "no-store" 
+                            cache: "no-store"
                         });
 
                         if (!response.ok) {
+                            const remaining = response.headers.get("X-RateLimit-Remaining");
+                            if (response.status === 403 && remaining === "0") {
+                                isRateLimit.value = true;
+                                throw new Error("GitHub API rate limit reached. Please try again in a few minutes.");
+                            }
                             throw new Error(`Could not reach the GitHub API (status ${response.status}). Ensure the 'latest' release exists.`);
                         }
-                        
+
                         const release = await response.json();
 
                         if (!release.assets || release.assets.length === 0) {
@@ -206,7 +293,6 @@
                         latestDate.value = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
                         let tempAppData = {};
 
-                        // YENİ MANTIK: Tüm dosyalar tek release içinde, dosyaların isminden sürümü çıkar
                         release.assets.forEach(asset => {
                             const nameLower = asset.name.toLowerCase();
                             if (!nameLower.endsWith('.apk')) return;
@@ -222,17 +308,16 @@
                             if (appKey && !tempAppData[appKey]) {
                                 let versionText = "GmsCore / Support component";
                                 if (appKey !== "microg") {
-                                    // Dosya isminden sürüm numarasını ayıkla (Örn: YouTube-21.26.360.apk -> 21.26.360)
                                     const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
                                     versionText = "v" + rawVersion;
                                 }
 
-                                tempAppData[appKey] = { 
+                                tempAppData[appKey] = {
                                     name: asset.name,
-                                    displayName: DISPLAY_NAMES[appKey], 
-                                    icon: ICONS[appKey], 
-                                    versionText: versionText, 
-                                    downloadUrl: asset.browser_download_url 
+                                    displayName: DISPLAY_NAMES[appKey],
+                                    icon: ICONS[appKey],
+                                    versionText: versionText,
+                                    downloadUrl: asset.browser_download_url
                                 };
                             }
                         });
@@ -242,7 +327,7 @@
                             const rawHtml = marked.parse(release.body);
                             changelogHTML.value = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
                         }
-                        
+
                         loading.value = false;
 
                     } catch (error) {
@@ -255,7 +340,7 @@
                 onMounted(() => init());
 
                 return {
-                    REPO, ICONS, DISPLAY_NAMES, ORDER,
+                    REPO, ICONS, DISPLAY_NAMES, ACCENTS, ORDER,
                     loading, errorMsg, isRateLimit, latestDate, appData, changelogHTML,
                     getObtainiumUrl, init
                 };
