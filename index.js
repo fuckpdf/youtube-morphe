@@ -196,6 +196,7 @@ ${pikoMpp.body}
 
     const patchedApksList = [];
 
+    // Tüm uygulamaları sırayla derle
     for (const appKey of appsToProcess) {
       try {
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
@@ -205,31 +206,44 @@ ${pikoMpp.body}
       }
     }
 
+    // Eğer en az bir APK başarıyla derlendiyse, hepsini TEK BİR sürümde topla
     if (patchedApksList.length > 0) {
+      
+      // Benzersiz bir Release Tag (Örn: build-20260716-1530) oluştur
+      const date = new Date();
+      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0]; 
+      const releaseTag = `build-${tagDateStr}`;
+      const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
+
+      // Tek ve birleştirilmiş Sürüm Notu (Body) oluştur
+      let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
+      
       for (const apk of patchedApksList) {
-        const releaseTag = `${apk.displayName}-${apk.version}`;
-        const releaseName = `${apk.displayName} v${apk.version}`;
-        
-        let customReleaseBody = `### 📦 ${apk.displayName} Update\n\n`;
-        customReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n\n`;
-        customReleaseBody += `---\n`;
-
-        if (apk.patchSource === "morphe" && morpheNotes) {
-          customReleaseBody += morpheNotes;
-        } else if (apk.patchSource === "piko" && pikoNotes) {
-          customReleaseBody += pikoNotes;
-        }
-
-        const release = await ensureRelease(releaseTag, releaseName, customReleaseBody);
-        
-        await uploadPatchedApk(release, apk.path);
-
-        if (apk.appName === "youtube" || apk.appName === "youtube-music") {
-          await uploadMicroGOnce(release);
-        }
-
-        console.log(`✅ Release published for ${apk.displayName}: ${releaseTag}`);
+        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
       }
+      
+      unifiedReleaseBody += `\n---\n\n`;
+
+      if (needsMorphe && morpheNotes) unifiedReleaseBody += morpheNotes;
+      if (needsPiko && pikoNotes) unifiedReleaseBody += pikoNotes;
+
+      // Sürümü oluştur
+      console.log(`\n📢 Creating Unified Release: ${releaseTag}`);
+      const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
+
+      // Tüm dosyaları aynı sürüme yükle
+      let microgUploaded = false;
+      for (const apk of patchedApksList) {
+        await uploadPatchedApk(release, apk.path);
+        
+        // Sadece bir kez MicroG yükle
+        if (!microgUploaded && (apk.appName === "youtube" || apk.appName === "youtube-music")) {
+          await uploadMicroGOnce(release);
+          microgUploaded = true;
+        }
+      }
+
+      console.log(`\n🎉 All apps successfully published under one release!`);
     }
   } catch (err) {
     console.error("❌ Fatal error:", err.message);
