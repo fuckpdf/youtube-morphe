@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Automatically built and patched APKs, updated via GitHub Actions.">
     <title>Patched APKs Hub</title>
-    <!-- Tailwind CSS (Modern Tasarım Çerçevesi) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Sürüm notları için Markdown okuyucu -->
+    <!-- Markdown renderer for release notes -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <!-- Tailwind Özel Renk ve Tema Ayarları -->
+    <!-- HTML sanitizer: release notes come partly from third-party repos (Morphe, Piko) we don't control,
+         so their rendered markdown MUST be sanitized before being inserted into the page to prevent XSS. -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -51,6 +54,11 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
+        .glass-panel-muted {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -69,11 +77,14 @@
 <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-500/30">
 
     <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col transition-all duration-300">
-        <!-- JS tarafından doldurulacak -->
+        <!-- Filled by JS -->
     </div>
 
     <script>
         const REPO = "fuckpdf/youtube-morphe";
+        const CACHE_KEY = "patched-apks-cache-v1";
+        const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes — avoids burning the unauthenticated
+                                             // GitHub API rate limit (60 req/hour/IP) on repeat visits
 
         const ICONS = {
             "youtube": "https://cdn.simpleicons.org/youtube/FF0000",
@@ -86,17 +97,56 @@
 
         const DISPLAY_NAMES = {
             "youtube": "YouTube",
-            "youtube-music": "YouTube Music",
+            "youtube-music": "YT.Music",
             "reddit": "Reddit",
-            "twitter": "Twitter / X",
+            "twitter": "Twitter",
             "instagram": "Instagram",
             "microg": "MicroG (GmsCore)"
         };
 
         const ORDER = ["youtube", "youtube-music", "instagram", "twitter", "reddit", "microg"];
-        
+
         const root = document.getElementById('app');
 
+        // --- Security helpers -------------------------------------------------
+        // Escapes any dynamic string before it's interpolated into innerHTML.
+        // Defense-in-depth: even though most values here come from our own
+        // trusted maps, asset names / tag names ultimately originate from
+        // GitHub release data, which should never be trusted implicitly.
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = String(str ?? '');
+            return div.innerHTML;
+        }
+
+        function safeMarkdown(body) {
+            if (!body) return '';
+            const rawHtml = marked.parse(body);
+            return DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
+        }
+
+        // --- Caching (reduces API calls, protects against rate limiting) ------
+        function readCache() {
+            try {
+                const raw = sessionStorage.getItem(CACHE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (Date.now() - parsed.timestamp > CACHE_TTL_MS) return null;
+                return parsed.data;
+            } catch {
+                return null;
+            }
+        }
+
+        function writeCache(data) {
+            try {
+                sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
+            } catch {
+                // sessionStorage may be unavailable (private mode etc.) — non-fatal
+            }
+        }
+
+        // --- Rendering ----------------------------------------------------------
         function renderSkeleton() {
             root.innerHTML = `
                 <header class="text-center mb-10 pt-6 animate-pulse">
@@ -118,37 +168,41 @@
             `;
         }
 
-        function renderError(message) {
+        function renderError(message, isRateLimit = false) {
             root.innerHTML = `
                 <div class="flex flex-col items-center justify-center flex-grow animate-fade-in">
                     <div class="glass-panel p-8 rounded-2xl text-center max-w-md border-red-500/30">
                         <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <h2 class="text-xl font-bold text-white mb-2">Bağlantı Hatası</h2>
-                        <p class="text-slate-400 text-sm">${message}</p>
+                        <h2 class="text-xl font-bold text-white mb-2">${isRateLimit ? 'Rate Limited' : 'Connection Error'}</h2>
+                        <p class="text-slate-400 text-sm mb-6">${escapeHtml(message)}</p>
+                        <button id="retry-btn" class="bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+                            Retry
+                        </button>
                     </div>
                 </div>
             `;
+            document.getElementById('retry-btn')?.addEventListener('click', () => init(true));
         }
 
         function renderApp(latestRelease, appDataHTML, changelogHTML) {
-            const date = new Date(latestRelease.published_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-            
+            const date = new Date(latestRelease.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+
             root.innerHTML = `
                 <header class="text-center mb-10 pt-6 animate-fade-in">
                     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-blue-500 to-purple-500">
                         Patched APKs Hub
                     </h1>
-                    <p class="text-slate-400 text-lg">Morphe & Piko ile derlenen en güncel sürümler</p>
+                    <p class="text-slate-400 text-lg">Latest builds patched with Morphe & Piko</p>
                 </header>
 
                 <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.1s;">
                     <div>
-                        <h2 class="text-lg font-semibold text-white">Aktif Derleme Durumu</h2>
-                        <p class="text-sm text-slate-400">Son güncelleme: ${date}</p>
+                        <h2 class="text-lg font-semibold text-white">Active Build Status</h2>
+                        <p class="text-sm text-slate-400">Last updated: ${escapeHtml(date)}</p>
                     </div>
                     <span class="px-4 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full font-mono text-sm font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(56,189,248,0.15)]">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        ${latestRelease.tag_name}
+                        ${escapeHtml(latestRelease.tag_name)}
                     </span>
                 </div>
 
@@ -160,7 +214,7 @@
                 <div class="animate-fade-in" style="animation-delay: 0.3s;">
                     <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
                         <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Sürüm Notları
+                        Release Notes
                     </h2>
                     <div class="glass-panel rounded-2xl p-6 md:p-8 markdown-body text-sm md:text-base">
                         ${changelogHTML}
@@ -169,22 +223,112 @@
                 ` : ''}
 
                 <footer class="mt-16 text-center text-slate-500 text-sm animate-fade-in" style="animation-delay: 0.4s;">
-                    <p>GitHub Actions tarafından otomatik olarak derlenmiştir.</p>
-                    <p class="mt-1">Kaynak kodlar: <a href="https://github.com/${REPO}" target="_blank" class="text-accent hover:underline transition-colors">youtube-morphe</a></p>
+                    <p>Automatically built via GitHub Actions.</p>
+                    <p class="mt-1">Source code: <a href="https://github.com/${REPO}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline transition-colors">youtube-morphe</a></p>
                 </footer>
             `;
         }
 
-        async function init() {
+        // Extracts "Morphe-1.35.0" / "Piko-3.8.0-dev.4" style patch info from the
+        // release body, using the known "DisplayName-AppVersion-" prefix that
+        // index.js writes for each app's bullet line.
+        function extractPatchInfo(body, displayName, appVersion) {
+            if (!body || !appVersion) return null;
+            const prefix = `${displayName}-${appVersion}-`;
+            const idx = body.indexOf(prefix);
+            if (idx === -1) return null;
+            const after = body.slice(idx + prefix.length);
+            const endIdx = after.indexOf('**');
+            if (endIdx === -1) return null;
+            return after.slice(0, endIdx).trim();
+        }
+
+        function renderAppCard(appKey, app, delay) {
+            const displayName = DISPLAY_NAMES[appKey] || appKey;
+
+            if (!app) {
+                return `
+                    <div class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-60 animate-fade-in" style="animation-delay: ${delay}s;">
+                        <div class="w-14 h-14 bg-slate-800/50 rounded-xl flex items-center justify-center p-2.5 border border-slate-700/30">
+                            <img src="${ICONS[appKey] || ICONS.microg}" alt="${escapeHtml(displayName)}" class="w-full h-full object-contain grayscale opacity-50">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-slate-400 tracking-tight">${escapeHtml(displayName)}</h3>
+                            <p class="text-slate-500 text-xs sm:text-sm font-medium">Not updated in this release</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${encodeURIComponent(appKey)}`;
+
+            return `
+                <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:border-slate-600 animate-fade-in group" style="animation-delay: ${delay}s;">
+                    <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
+                        <div class="w-14 h-14 bg-slate-800/80 rounded-xl flex items-center justify-center p-2.5 shadow-inner border border-slate-700/50 group-hover:bg-slate-700/80 transition-colors">
+                            <img src="${app.icon}" alt="${escapeHtml(app.displayName)}" class="w-full h-full object-contain filter drop-shadow-md">
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-white tracking-tight">${escapeHtml(app.displayName)}</h3>
+                            <p class="text-slate-400 text-xs sm:text-sm font-medium">${escapeHtml(app.versionText)}</p>
+                            ${app.patchInfo ? `<p class="text-slate-500 text-xs mt-0.5">${escapeHtml(app.patchInfo)}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                        <a href="${app.downloadUrl}" class="flex-1 sm:flex-none bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all text-center">
+                            Download
+                        </a>
+                        <a href="${obtainiumUrl}" title="Track with Obtainium" class="flex items-center justify-center bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 w-11 h-11 rounded-xl transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function fetchReleases() {
+            const response = await fetch(`https://api.github.com/repos/${REPO}/releases`, {
+                headers: { "Accept": "application/vnd.github+json" }
+            });
+
+            if (!response.ok) {
+                const remaining = response.headers.get("X-RateLimit-Remaining");
+                const resetHeader = response.headers.get("X-RateLimit-Reset");
+
+                if (response.status === 403 && remaining === "0") {
+                    const resetDate = resetHeader ? new Date(parseInt(resetHeader, 10) * 1000) : null;
+                    const resetText = resetDate
+                        ? `Try again after ${resetDate.toLocaleTimeString('en-US')}.`
+                        : "Try again in a few minutes.";
+                    const err = new Error(`GitHub API rate limit reached. ${resetText}`);
+                    err.isRateLimit = true;
+                    throw err;
+                }
+
+                throw new Error(`Could not reach the GitHub API (status ${response.status}).`);
+            }
+
+            return response.json();
+        }
+
+        async function init(forceRefresh = false) {
             renderSkeleton();
 
             try {
-                const response = await fetch(`https://api.github.com/repos/${REPO}/releases`);
-                if (!response.ok) throw new Error("GitHub API'ye erişilemiyor. Rate limit veya ağ sorunu olabilir.");
-                
-                const releases = await response.json();
+                let releases = forceRefresh ? null : readCache();
+
+                if (!releases) {
+                    releases = await fetchReleases();
+                    writeCache(releases);
+                }
+
                 if (!releases || releases.length === 0) {
-                    return renderError("Henüz yayınlanmış bir APK paketi bulunamadı.");
+                    return renderError("No published APK bundle found yet.");
                 }
 
                 const latestRelease = releases[0];
@@ -203,68 +347,43 @@
 
                     const icon = ICONS[appKey] || ICONS["microg"];
                     const displayName = DISPLAY_NAMES[appKey] || asset.name;
-                    
-                    let versionText = "GmsCore / Destekleyici";
+
+                    let versionText = "GmsCore / Support component";
+                    let rawVersionOnly = null;
                     const cleanName = asset.name.replace("-patched", "").replace(".apk", "").replace(".apkm", "");
-                    
+
                     if (appKey !== "microg") {
                         const rawVersion = cleanName.substring(appKey.length + 1);
-                        if (rawVersion) versionText = "v" + rawVersion;
+                        if (rawVersion) {
+                            rawVersionOnly = rawVersion;
+                            versionText = "v" + rawVersion;
+                        }
                     } else {
                         versionText = "v" + cleanName.replace("microg-", "");
                     }
 
-                    appData[appKey] = { displayName, icon, versionText, downloadUrl: asset.browser_download_url };
+                    const patchInfo = rawVersionOnly
+                        ? extractPatchInfo(latestRelease.body, displayName, rawVersionOnly)
+                        : null;
+
+                    appData[appKey] = { displayName, icon, versionText, patchInfo, downloadUrl: asset.browser_download_url };
                 });
 
                 let appDataHTML = '';
                 let delay = 0.15;
-                
-                ORDER.forEach(appKey => {
-                    const app = appData[appKey];
-                    if (!app) return;
 
-                    const obtainiumUrl = `obtainium://add/https://github.com/${REPO}?filenameFilter=${appKey}`;
-                    
-                    appDataHTML += `
-                        <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:border-slate-600 animate-fade-in group" style="animation-delay: ${delay}s;">
-                            <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
-                                <div class="w-14 h-14 bg-slate-800/80 rounded-xl flex items-center justify-center p-2.5 shadow-inner border border-slate-700/50 group-hover:bg-slate-700/80 transition-colors">
-                                    <img src="${app.icon}" alt="${app.displayName}" class="w-full h-full object-contain filter drop-shadow-md">
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="text-lg font-bold text-white tracking-tight">${app.displayName}</h3>
-                                    <p class="text-slate-400 text-xs sm:text-sm font-medium">${app.versionText}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-                                <a href="${app.downloadUrl}" class="flex-1 sm:flex-none bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white border border-emerald-500/20 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all text-center">
-                                    İndir
-                                </a>
-                                <a href="${obtainiumUrl}" title="Obtainium ile Takip Et" class="flex items-center justify-center bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 w-11 h-11 rounded-xl transition-all">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="23 4 23 10 17 10"></polyline>
-                                        <polyline points="1 20 1 14 7 14"></polyline>
-                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 3.51 15"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-                    `;
+                ORDER.forEach(appKey => {
+                    appDataHTML += renderAppCard(appKey, appData[appKey], delay);
                     delay += 0.05;
                 });
 
-                let changelogHTML = null;
-                if (latestRelease.body) {
-                    changelogHTML = marked.parse(latestRelease.body);
-                }
+                const changelogHTML = latestRelease.body ? safeMarkdown(latestRelease.body) : null;
 
                 renderApp(latestRelease, appDataHTML, changelogHTML);
 
             } catch (error) {
                 console.error(error);
-                renderError(error.message);
+                renderError(error.message, !!error.isRateLimit);
             }
         }
 
