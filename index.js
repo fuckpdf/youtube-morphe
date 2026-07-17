@@ -91,9 +91,9 @@ async function processApp(appKey, desktop, patches) {
       console.log(`⚠️ APKMirror failed (${e.message}). Downloading from custom GitHub repo...`);
       const customUrl = "https://github.com/fuckpdf/Depo/releases/download/instagram/instagram.apkm";
       const destPath = path.resolve(process.cwd(), "instagram-base.apkm");
-      
+
       execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
-      
+
       if (!fs.existsSync(destPath) || fs.statSync(destPath).size < 1000) {
         throw new Error("Downloaded file from custom repo is invalid.");
       }
@@ -106,7 +106,7 @@ async function processApp(appKey, desktop, patches) {
 
   let extraArgs = "";
   const argParts = [];
-  
+
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
@@ -122,17 +122,17 @@ async function processApp(appKey, desktop, patches) {
   const appDisplayName = DISPLAY_NAMES[config.name] || config.name;
   const finalName = `${appDisplayName}-${selectedVersion}.apk`;
   const finalPath = path.join(process.cwd(), finalName);
-  
+
   fs.copyFileSync(actualPatched, finalPath);
 
-  return { 
-    appName: config.name, 
+  return {
+    appName: config.name,
     displayName: appDisplayName,
-    icon: config.icon, 
+    icon: config.icon,
     patchSource: config.patchSource,
-    name: finalName, 
-    path: finalPath, 
-    version: selectedVersion 
+    name: finalName,
+    path: finalPath,
+    version: selectedVersion
   };
 }
 
@@ -161,7 +161,7 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.morphe = morpheMpp.name;
-      
+
       morpheNotes = `
 <details>
 <summary>🟢 <b>Morphe Release Notes (${morpheMpp.tag})</b></summary>
@@ -182,7 +182,7 @@ ${morpheMpp.body}
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.piko = pikoMpp.name;
-      
+
       pikoNotes = `
 <details>
 <summary>✖️ <b>Piko Release Notes (${pikoMpp.tag})</b></summary>
@@ -196,7 +196,6 @@ ${pikoMpp.body}
 
     const patchedApksList = [];
 
-    // Tüm uygulamaları sırayla derle
     for (const appKey of appsToProcess) {
       try {
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
@@ -206,37 +205,30 @@ ${pikoMpp.body}
       }
     }
 
-    // Eğer en az bir APK başarıyla derlendiyse, hepsini TEK BİR sürümde topla
     if (patchedApksList.length > 0) {
-      
-      // Benzersiz bir Release Tag (Örn: build-20260716-1530) oluştur
       const date = new Date();
-      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0]; 
+      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
       const releaseTag = `build-${tagDateStr}`;
       const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
 
-      // Tek ve birleştirilmiş Sürüm Notu (Body) oluştur
       let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
-      
+
       for (const apk of patchedApksList) {
         unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
       }
-      
+
       unifiedReleaseBody += `\n---\n\n`;
 
       if (needsMorphe && morpheNotes) unifiedReleaseBody += morpheNotes;
       if (needsPiko && pikoNotes) unifiedReleaseBody += pikoNotes;
 
-      // Sürümü oluştur
       console.log(`\n📢 Creating Unified Release: ${releaseTag}`);
       const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
 
-      // Tüm dosyaları aynı sürüme yükle
       let microgUploaded = false;
       for (const apk of patchedApksList) {
         await uploadPatchedApk(release, apk.path);
-        
-        // Sadece bir kez MicroG yükle
+
         if (!microgUploaded && (apk.appName === "youtube" || apk.appName === "youtube-music")) {
           await uploadMicroGOnce(release);
           microgUploaded = true;
