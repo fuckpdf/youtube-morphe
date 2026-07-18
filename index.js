@@ -9,6 +9,11 @@ const { patchApk } = require("./lib/patcher");
 const { ensureRelease } = require("./lib/release");
 
 const DISPLAY_NAMES = {
+  "youtube": "YouTube",
+  "youtube-music": "YT.Music",
+  "reddit": "Reddit",
+  "twitter": "Twitter",
+  "instagram": "Instagram",
   "github": "GitHub",
   "niagara": "Niagara Launcher",
   "pydroid": "PyDroid3",
@@ -20,6 +25,50 @@ const DISPLAY_NAMES = {
 };
 
 const APPS_CONFIG = {
+  "youtube": {
+    pkg: "com.google.android.youtube",
+    name: "youtube",
+    patchSource: "morphe",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/youtube/FF0000",
+    exclude: []
+  },
+  "youtube-music": {
+    pkg: "com.google.android.apps.youtube.music",
+    name: "youtube-music",
+    patchSource: "morphe",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/youtubemusic/FF0000",
+    exclude: []
+  },
+  "reddit": {
+    pkg: "com.reddit.frontpage",
+    name: "reddit",
+    patchSource: "morphe",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/reddit/FF4500",
+    exclude: []
+  },
+  "twitter": {
+    pkg: "com.twitter.android",
+    name: "twitter",
+    patchSource: "piko",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/x/000000",
+    exclude: ["Dynamic color"],
+    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
+  },
+  "instagram": {
+    pkg: "com.instagram.android",
+    name: "instagram",
+    patchSource: "piko",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/instagram/E4405F",
+    exclude: [],
+    enable: [],
+    forceVersion: "435.0.0.37.76",
+    forceBuild: "384109456"
+  },
   "github": {
     pkg: "com.github.android",
     name: "github",
@@ -113,6 +162,7 @@ const APPS_CONFIG = {
 async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   let selectedVersion = config.forceVersion;
+  let resolvedVersion = null;
 
   if (!selectedVersion && config.forceLatest) {
     selectedVersion = "latest";
@@ -129,7 +179,28 @@ async function processApp(appKey, desktop, patches) {
 
   if (!selectedVersion) return null;
 
-  let apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
+  let apkPath;
+  try {
+    const result = await downloadApk(selectedVersion, config.name, config.forceBuild);
+    apkPath = typeof result === 'string' ? result : result.filePath;
+    if (result.actualVersion) {
+        resolvedVersion = result.actualVersion;
+    }
+  } catch (e) {
+    if (appKey === "instagram") {
+      console.log(`⚠️ APKMirror failed (${e.message}). Downloading from custom GitHub repo...`);
+      const customUrl = "https://github.com/fuckpdf/Depo/releases/download/instagram/instagram.apkm";
+      const destPath = path.resolve(process.cwd(), "instagram-base.apkm");
+      execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
+      if (!fs.existsSync(destPath) || fs.statSync(destPath).size < 1000) {
+        throw new Error("Downloaded file from custom repo is invalid.");
+      }
+      apkPath = destPath;
+      resolvedVersion = config.forceVersion;
+    } else {
+      throw e;
+    }
+  }
 
   let extraArgs = "";
   const argParts = [];
@@ -146,8 +217,9 @@ async function processApp(appKey, desktop, patches) {
 
   if (!fs.existsSync(actualPatched)) return null;
 
+  const finalVersionText = resolvedVersion || (selectedVersion !== "latest" ? selectedVersion : "unknown");
   const appDisplayName = DISPLAY_NAMES[appKey] || config.name;
-  const finalName = `${appDisplayName}-${selectedVersion}.apk`;
+  const finalName = `${appDisplayName}-${finalVersionText}.apk`;
   const finalPath = path.join(process.cwd(), finalName);
 
   fs.copyFileSync(actualPatched, finalPath);
@@ -159,7 +231,7 @@ async function processApp(appKey, desktop, patches) {
     patchSource: config.patchSource,
     name: finalName,
     path: finalPath,
-    version: selectedVersion
+    version: finalVersionText
   };
 }
 
@@ -172,8 +244,8 @@ async function processApp(appKey, desktop, patches) {
     });
     const desktop = desktopObj.name;
 
-    const patchesPool = { morphe: null, adobo: null, xtra: null };
-    let notes = { morphe: "", adobo: "", xtra: "" };
+    const patchesPool = { morphe: null, piko: null, adobo: null, xtra: null };
+    let notes = { morphe: "", piko: "", adobo: "", xtra: "" };
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? Object.keys(APPS_CONFIG) : [targetApp];
@@ -187,6 +259,17 @@ async function processApp(appKey, desktop, patches) {
       });
       patchesPool.morphe = mpp.name;
       notes.morphe = `<details><summary><b>hoo-dles Release Notes</b></summary><br>${mpp.body}</details>`;
+    }
+
+    if (appsToProcess.some(k => APPS_CONFIG[k].patchSource === "piko")) {
+      const mpp = await downloadLatestGithubAsset({
+        owner: "crimera",
+        repo: "piko",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.piko = mpp.name;
+      notes.piko = `<details><summary><b>Piko Release Notes</b></summary><br>${mpp.body}</details>`;
     }
 
     if (appsToProcess.some(k => APPS_CONFIG[k].patchSource === "adobo")) {
@@ -215,7 +298,8 @@ async function processApp(appKey, desktop, patches) {
 
     for (const appKey of appsToProcess) {
       try {
-        console.log(`\n⏳ Isleniyor: ${APPS_CONFIG[appKey].name.toUpperCase()}`);
+        console.log(`
+⏳ Isleniyor: ${APPS_CONFIG[appKey].name.toUpperCase()}`);
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
         
         if (result) {
@@ -235,12 +319,19 @@ async function processApp(appKey, desktop, patches) {
       const releaseTag = `build-${tagDateStr}`;
       const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
 
-      let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
+      let unifiedReleaseBody = `### 📦 Latest Patched APKs
+
+`;
       for (const apk of patchedApksList) {
-        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
+        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})
+`;
       }
-      unifiedReleaseBody += `\n---\n\n`;
+      unifiedReleaseBody += `
+---
+
+`;
       if (notes.morphe) unifiedReleaseBody += notes.morphe;
+      if (notes.piko) unifiedReleaseBody += notes.piko;
       if (notes.adobo) unifiedReleaseBody += notes.adobo;
       if (notes.xtra) unifiedReleaseBody += notes.xtra;
 
@@ -248,7 +339,8 @@ async function processApp(appKey, desktop, patches) {
 
       for (const apk of patchedApksList) {
         try {
-          console.log(`\n📤 Uploading via GitHub CLI: ${apk.name}`);
+          console.log(`
+📤 Uploading via GitHub CLI: ${apk.name}`);
           execSync(`gh release upload "latest" "${apk.path}" --clobber`, { stdio: 'inherit' });
         } catch (uploadErr) {
           console.error(`❌ Upload Failed for ${apk.name}: ${uploadErr.message}`);
