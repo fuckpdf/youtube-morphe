@@ -23,7 +23,8 @@ const DISPLAY_NAMES = {
   "wps-office": "WPS Office",
   "gboard": "Gboard",
   "speedtest": "Speedtest",
-  "solid-explorer": "Solid Explorer"
+  "solid-explorer": "Solid Explorer",
+  "brave": "Brave"
 };
 
 // Sadece APKMirror üzerinden indirilecek uygulamalar
@@ -66,7 +67,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/x/000000",
     exclude: ["Dynamic color"],
-    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
+    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"],
+    forceCompat: true
   },
   "instagram": {
     pkg: "com.instagram.android",
@@ -85,7 +87,8 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/github/ffffff",
-    exclude: []
+    exclude: [],
+    forceCompat: true
   },
   "niagara-launcher": {
     pkg: "bitpit.launcher",
@@ -94,7 +97,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
     exclude: [],
-    forceVersion : "1.16.8"
+    forceVersion : "1.16.8",
+    forceCompat: true
   },
   "pydroid3": {
     pkg: "ru.iiec.pydroid3",
@@ -102,7 +106,8 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=pydroid3.com",
-    exclude: []
+    exclude: [],
+    forceCompat: true
   },
   "smart-launcher": {
     pkg: "ginlemon.flowerfree",
@@ -110,7 +115,8 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=smartlauncher.net",
-    exclude: []
+    exclude: [],
+    forceCompat: true
   },
   "wps-office": {
     pkg: "cn.wps.moffice_eng",
@@ -118,7 +124,8 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
-    exclude: []
+    exclude: [],
+    forceCompat: true
   },
   "gboard": {
     pkg: "com.google.android.inputmethod.latin",
@@ -127,7 +134,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/google/4285F4",
     exclude: [],
-    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"]
+    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"],
+    forceCompat: true
   },
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
@@ -144,7 +152,17 @@ const APPS_CONFIG = {
     patchSource: "rushi",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
-    exclude: []
+    exclude: [],
+    forceCompat: true
+  },
+  "brave": {
+    pkg: "com.brave.browser",
+    name: "brave",
+    patchSource: "bufferk",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/brave/FB542B",
+    exclude: [],
+    forceCompat: true
   }
 };
 
@@ -161,7 +179,8 @@ const PROCESS_ORDER = [
   "wps-office",
   "gboard",
   "speedtest",
-  "solid-explorer"
+  "solid-explorer",
+  "brave"
 ];
 
 async function processApp(appKey, desktop, patches) {
@@ -172,7 +191,6 @@ async function processApp(appKey, desktop, patches) {
 
   let selectedVersion = config.forceVersion;
 
-  // Yama aracından desteklenen sürümü çekmeyi dene
   if (!selectedVersion) {
     try {
       const output = execSync(
@@ -189,13 +207,10 @@ async function processApp(appKey, desktop, patches) {
     }
   }
 
-  // Yama aracı sürüm listelemiyorsa veya evrensel bir yamaysa
   if (!selectedVersion) {
     if (!isApkMirrorApp) {
-      // GithubDL uygulamaları için sürüm önemsiz, depodaki dosyayı çekeceğiz
       selectedVersion = "latest";
     } else {
-      // APKMirror için en günceli bulmayı dene
       const latest = await apkmirror.getLatestListing(config.name);
       if (latest && latest.version) {
         selectedVersion = latest.version;
@@ -208,7 +223,6 @@ async function processApp(appKey, desktop, patches) {
     throw new Error("Uygun bir sürüm numarası belirlenemedi.");
   }
 
-  // İndirme fonksiyonunu otomatik seç
   const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
   const apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
 
@@ -256,12 +270,13 @@ async function processApp(appKey, desktop, patches) {
     });
     const desktop = desktopObj.name;
 
-    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, rushi: null };
+    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, rushi: null, bufferk: null };
     let morpheNotes = "";
     let pikoNotes = "";
     let hoodlesNotes = "";
     let adoboNotes = "";
     let rushiNotes = "";
+    let bufferkNotes = "";
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? PROCESS_ORDER : [targetApp];
@@ -275,16 +290,7 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.morphe = morpheMpp.name;
-
-      morpheNotes = `
-<details>
-<summary>🟢 <b>Morphe Release Notes (${morpheMpp.tag})</b></summary>
-<br>
-
-${morpheMpp.body}
-
-</details>
-`;
+      morpheNotes = `\n<details>\n<summary>🟢 <b>Morphe Release Notes (${morpheMpp.tag})</b></summary>\n<br>\n\n${morpheMpp.body}\n\n</details>\n`;
     }
 
     const needsPiko = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "piko");
@@ -296,16 +302,7 @@ ${morpheMpp.body}
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.piko = pikoMpp.name;
-
-      pikoNotes = `
-<details>
-<summary>✖️ <b>Piko Release Notes (${pikoMpp.tag})</b></summary>
-<br>
-
-${pikoMpp.body}
-
-</details>
-`;
+      pikoNotes = `\n<details>\n<summary>✖️ <b>Piko Release Notes (${pikoMpp.tag})</b></summary>\n<br>\n\n${pikoMpp.body}\n\n</details>\n`;
     }
 
     const needsHoodles = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "hoodles");
@@ -317,16 +314,7 @@ ${pikoMpp.body}
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.hoodles = hoodlesMpp.name;
-
-      hoodlesNotes = `
-<details>
-<summary>🍃 <b>hoo-dles Release Notes (${hoodlesMpp.tag})</b></summary>
-<br>
-
-${hoodlesMpp.body}
-
-</details>
-`;
+      hoodlesNotes = `\n<details>\n<summary>🍃 <b>hoo-dles Release Notes (${hoodlesMpp.tag})</b></summary>\n<br>\n\n${hoodlesMpp.body}\n\n</details>\n`;
     }
 
     const needsAdobo = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "adobo");
@@ -338,16 +326,7 @@ ${hoodlesMpp.body}
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.adobo = adoboMpp.name;
-
-      adoboNotes = `
-<details>
-<summary>🥘 <b>Adobo Release Notes (${adoboMpp.tag})</b></summary>
-<br>
-
-${adoboMpp.body}
-
-</details>
-`;
+      adoboNotes = `\n<details>\n<summary>🥘 <b>Adobo Release Notes (${adoboMpp.tag})</b></summary>\n<br>\n\n${adoboMpp.body}\n\n</details>\n`;
     }
 
     const needsRushi = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "rushi");
@@ -359,16 +338,19 @@ ${adoboMpp.body}
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.rushi = rushiMpp.name;
+      rushiNotes = `\n<details>\n<summary>⚡ <b>Rushiranpise Release Notes (${rushiMpp.tag})</b></summary>\n<br>\n\n${rushiMpp.body}\n\n</details>\n`;
+    }
 
-      rushiNotes = `
-<details>
-<summary>⚡ <b>Rushiranpise Release Notes (${rushiMpp.tag})</b></summary>
-<br>
-
-${rushiMpp.body}
-
-</details>
-`;
+    const needsBufferk = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "bufferk");
+    if (needsBufferk) {
+      const bufferkMpp = await downloadLatestGithubAsset({
+        owner: "bufferk",
+        repo: "morphe-patches",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.bufferk = bufferkMpp.name;
+      bufferkNotes = `\n<details>\n<summary>🟣 <b>Bufferk Release Notes (${bufferkMpp.tag})</b></summary>\n<br>\n\n${bufferkMpp.body}\n\n</details>\n`;
     }
 
     const patchedApksList = [];
@@ -400,6 +382,7 @@ ${rushiMpp.body}
       if (needsHoodles && hoodlesNotes) unifiedReleaseBody += hoodlesNotes;
       if (needsAdobo && adoboNotes) unifiedReleaseBody += adoboNotes;
       if (needsRushi && rushiNotes) unifiedReleaseBody += rushiNotes;
+      if (needsBufferk && bufferkNotes) unifiedReleaseBody += bufferkNotes;
 
       console.log(`\n📢 Creating Unified Release: latest`);
       const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
