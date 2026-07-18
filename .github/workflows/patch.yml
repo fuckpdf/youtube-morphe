@@ -1,14 +1,14 @@
-name: Build Patched Apps
+name: Patch Morphe
 
 on:
   workflow_dispatch:
   # schedule:
-  #   - cron: '0 2 * * *' # İstersen her gece 02:00'de otomatik çalışması için başındaki '#' işaretini kaldırabilirsin
+  #   - cron: '0 2 * * *'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60 # Uygulama sayısı arttığı için zaman aşımı süresini 60 dakikaya çıkardık
+    timeout-minutes: 60
 
     permissions:
       contents: write
