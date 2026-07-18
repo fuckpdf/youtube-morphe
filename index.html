@@ -936,6 +936,15 @@
         gap: 7px;
         min-width: 0;
       }
+      
+      /* İkon Stilleri */
+      .app-ico {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        object-fit: contain;
+      }
+
       .rank-dot {
         width: 17px;
         height: 17px;
@@ -1111,10 +1120,8 @@
     </div>
 
     <script>
-      // ─── BURAYI KENDİ REPO BİLGİLERİNLE DEĞİŞTİR ───
       const OWNER = "fuckpdf";
       const REPO = "youtube-morphe";
-      // ──────────────────────────────────────────────
       
       const DEFAULT_VISIBLE = 5;
 
@@ -1144,6 +1151,28 @@
         "#f0c240",
         "#60c88a",
       ];
+
+      // İkon Tanımlamaları
+      const APP_ICONS = {
+        youtube: "https://cdn.simpleicons.org/youtube/FF0000",
+        "yt.music": "https://cdn.simpleicons.org/youtubemusic/FF0000",
+        instagram: "https://cdn.simpleicons.org/instagram/E4405F",
+        twitter: "https://cdn.simpleicons.org/x/ffffff",
+        reddit: "https://cdn.simpleicons.org/reddit/FF4500",
+        microg: "https://cdn.simpleicons.org/google/4285F4"
+      };
+
+      // Dosya adına göre uygun ikonu getiren fonksiyon
+      function getAppIcon(filename) {
+        const lower = filename.toLowerCase();
+        if (lower.includes('yt.music')) return APP_ICONS['yt.music'];
+        if (lower.includes('youtube')) return APP_ICONS['youtube'];
+        if (lower.includes('instagram')) return APP_ICONS['instagram'];
+        if (lower.includes('twitter')) return APP_ICONS['twitter'];
+        if (lower.includes('reddit')) return APP_ICONS['reddit'];
+        if (lower.includes('microg')) return APP_ICONS['microg'];
+        return null;
+      }
 
       let _releases = [],
         _sort = "newest";
@@ -1277,10 +1306,16 @@
             function buildRow(a, sectionIdx, typeKey) {
               const pct = Math.round((a.download_count / maxA) * 100);
               const isApk = typeKey === "apk";
+              
+              // İkonu belirleme
+              const iconUrl = getAppIcon(a.name);
+              const iconHtml = iconUrl ? `<img src="${iconUrl}" class="app-ico" alt="">` : `<span class="app-ico" style="font-size:14px;line-height:16px;text-align:center;">📦</span>`;
+
               return `
               <div class="asset-item ${isApk ? "is-apk" : ""}">
                 <div class="asset-info">
                   <span class="rank-dot ${rankCls(sectionIdx)}">${sectionIdx + 1}</span>
+                  ${iconHtml}
                   <span class="asset-name" title="${a.name}">${a.name}</span>
                 </div>
                 <a class="dl-btn ${isApk ? "apk-dl" : ""}" href="${a.browser_download_url}" title="Download ${a.name}">
@@ -1310,24 +1345,7 @@
             }
             if (otherAssets.length > 0) {
               body += `<div class="asset-section">${otherAssets
-                .map((a, i) => {
-                  const pct = Math.round((a.download_count / maxA) * 100);
-                  return `<div class="asset-item">
-                <div class="asset-info">
-                  <span class="rank-dot ${rankCls(i)}">${i + 1}</span>
-                  <span class="asset-name" title="${a.name}">${a.name}</span>
-                </div>
-                <a class="dl-btn" href="${a.browser_download_url}">${dlIcon(12)} Download</a>
-                <div class="asset-stats">
-                  <span class="sz-lbl">${fmtSz(a.size)}</span>
-                  <div class="dl-bar-wrap">
-                    <div class="dl-bar"><div class="dl-bar-fill" style="width:${pct}%"></div></div>
-                    <span class="dl-count">${fmt(a.download_count)}</span>
-                    <span class="dl-count-note">dls</span>
-                  </div>
-                </div>
-              </div>`;
-                })
+                .map((a, i) => buildRow(a, i, "other"))
                 .join("")}</div>`;
             }
             if (assets.length === 0)
