@@ -161,21 +161,13 @@
                                 <p class="text-zinc-500 text-xs sm:text-sm font-mono">{{ appData[appKey].versionText }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                        <div class="flex items-center w-full sm:w-auto mt-4 sm:mt-0">
                             <a :href="appData[appKey].downloadUrl"
-                               class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-semibold text-sm text-center transition-all border"
+                               class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-semibold text-sm text-center transition-all border"
                                :style="{ color: ACCENTS[appKey], borderColor: ACCENTS[appKey] + '40', background: ACCENTS[appKey] + '14' }"
                                onmouseover="this.style.background=this.style.borderColor.replace('40','cc'); this.style.color='#fff';"
                                :onmouseleave="`this.style.background='${ACCENTS[appKey]}14'; this.style.color='${ACCENTS[appKey]}';`">
                                 Download
-                            </a>
-                            <a :href="getObtainiumUrl(appKey)" title="Track with Obtainium"
-                               class="flex items-center justify-center bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/10 border border-white/10 w-11 h-11 rounded-xl transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <polyline points="1 20 1 14 7 14"></polyline>
-                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 3.51 15"></path>
-                                </svg>
                             </a>
                         </div>
                     </div>
@@ -229,7 +221,8 @@
                     "wps-office": "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
                     "gboard": "https://cdn.simpleicons.org/google/4285F4",
                     "speedtest": "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
-                    "solid-explorer": "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com"
+                    "solid-explorer": "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
+                    "brave": "https://cdn.simpleicons.org/brave/FB542B"
                 };
 
                 const DISPLAY_NAMES = {
@@ -246,7 +239,8 @@
                     "wps-office": "WPS Office",
                     "gboard": "Gboard",
                     "speedtest": "Speedtest",
-                    "solid-explorer": "Solid Explorer"
+                    "solid-explorer": "Solid Explorer",
+                    "brave": "Brave"
                 };
 
                 const ACCENTS = {
@@ -263,13 +257,14 @@
                     "wps-office": "#ff5b33",
                     "gboard": "#4285f4",
                     "speedtest": "#8bc53f",
-                    "solid-explorer": "#4caf50"
+                    "solid-explorer": "#4caf50",
+                    "brave": "#fb542b"
                 };
 
                 const ORDER = [
                     "youtube", "youtube-music", "instagram", "twitter", "reddit",
                     "github", "niagara-launcher", "pydroid3", "smart-launcher", "wps-office",
-                    "gboard", "speedtest", "solid-explorer",
+                    "gboard", "speedtest", "solid-explorer", "brave",
                     "microg"
                 ];
 
@@ -279,28 +274,6 @@
                 const latestDate = ref("");
                 const appData = ref({});
                 const changelogHTML = ref(null);
-
-                const getObtainiumUrl = (appKey) => {
-                    let apkFilter = "";
-                    const releaseFilter = "latest";
-
-                    if (appKey === "youtube") { apkFilter = "YouTube-.*\\.apk"; }
-                    else if (appKey === "youtube-music") { apkFilter = "YT\\.Music-.*\\.apk"; }
-                    else if (appKey === "instagram") { apkFilter = "Instagram-.*\\.apk"; }
-                    else if (appKey === "twitter") { apkFilter = "Twitter-.*\\.apk"; }
-                    else if (appKey === "reddit") { apkFilter = "Reddit-.*\\.apk"; }
-                    else if (appKey === "github") { apkFilter = "GitHub-.*\\.apk"; }
-                    else if (appKey === "niagara-launcher") { apkFilter = "Niagara Launcher-.*\\.apk"; }
-                    else if (appKey === "pydroid3") { apkFilter = "PyDroid3-.*\\.apk"; }
-                    else if (appKey === "smart-launcher") { apkFilter = "Smart Launcher-.*\\.apk"; }
-                    else if (appKey === "wps-office") { apkFilter = "WPS Office-.*\\.apk"; }
-                    else if (appKey === "gboard") { apkFilter = "Gboard-.*\\.apk"; }
-                    else if (appKey === "speedtest") { apkFilter = "Speedtest-.*\\.apk"; }
-                    else if (appKey === "solid-explorer") { apkFilter = "Solid Explorer-.*\\.apk"; }
-                    else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; }
-
-                    return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(apkFilter)}&releaseTitleFilterRegEx=${encodeURIComponent(releaseFilter)}`;
-                };
 
                 const init = async () => {
                     loading.value = true;
@@ -348,6 +321,7 @@
                             else if (nameLower.startsWith("gboard-")) appKey = "gboard";
                             else if (nameLower.startsWith("speedtest-")) appKey = "speedtest";
                             else if (nameLower.startsWith("solid explorer-")) appKey = "solid-explorer";
+                            else if (nameLower.startsWith("brave-")) appKey = "brave";
                             else if (nameLower === "microg.apk") appKey = "microg";
 
                             if (appKey && !tempAppData[appKey]) {
@@ -387,7 +361,7 @@
                 return {
                     REPO, ICONS, DISPLAY_NAMES, ACCENTS, ORDER,
                     loading, errorMsg, isRateLimit, latestDate, appData, changelogHTML,
-                    getObtainiumUrl, init
+                    init
                 };
             }
         }).mount('#app');
