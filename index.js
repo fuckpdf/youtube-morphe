@@ -167,28 +167,39 @@ async function processApp(appKey, desktop, patches) {
   if (!selectedVersion && config.forceLatest) {
     selectedVersion = "latest";
   } else if (!selectedVersion) {
-    const output = execSync(
-      `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
-      { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
-    );
+    try {
+      const output = execSync(
+        `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
+        { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
+      );
 
-    const versions = extractYoutubeVersions(output);
-    if (!versions.length) return null;
-    selectedVersion = pickLatestVersion(versions);
+      const versions = extractYoutubeVersions(output);
+      if (versions && versions.length > 0) {
+        selectedVersion = pickLatestVersion(versions);
+      } else {
+        const rawVersions = [...output.matchAll(/\b(\d{1,3}\.\d{1,3}\.\d{1,4}(\.\d+)?)\b/g)].map(m => m[1]);
+        if (rawVersions.length > 0) {
+          selectedVersion = rawVersions.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+        }
+      }
+    } catch (e) {
+      console.log(`⚠️ list-versions hatası: ${e.message}`);
+    }
+
+    if (!selectedVersion) {
+      selectedVersion = "latest";
+    }
   }
-
-  if (!selectedVersion) return null;
 
   let apkPath;
   try {
     const result = await downloadApk(selectedVersion, config.name, config.forceBuild);
     apkPath = typeof result === 'string' ? result : result.filePath;
-    if (result.actualVersion) {
+    if (result && result.actualVersion) {
         resolvedVersion = result.actualVersion;
     }
   } catch (e) {
     if (appKey === "instagram") {
-      console.log(`⚠️ APKMirror failed (${e.message}). Downloading from custom GitHub repo...`);
       const customUrl = "https://github.com/fuckpdf/Depo/releases/download/instagram/instagram.apkm";
       const destPath = path.resolve(process.cwd(), "instagram-base.apkm");
       execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
@@ -298,8 +309,7 @@ async function processApp(appKey, desktop, patches) {
 
     for (const appKey of appsToProcess) {
       try {
-        console.log(`
-⏳ Isleniyor: ${APPS_CONFIG[appKey].name.toUpperCase()}`);
+        console.log(`\n⏳ Isleniyor: ${APPS_CONFIG[appKey].name.toUpperCase()}`);
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
         
         if (result) {
@@ -317,19 +327,13 @@ async function processApp(appKey, desktop, patches) {
       const date = new Date();
       const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
       const releaseTag = `build-${tagDateStr}`;
-      const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
+      const releaseName = `Patch Morphe (${tagDateStr})`;
 
-      let unifiedReleaseBody = `### 📦 Latest Patched APKs
-
-`;
+      let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
       for (const apk of patchedApksList) {
-        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})
-`;
+        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
       }
-      unifiedReleaseBody += `
----
-
-`;
+      unifiedReleaseBody += `\n---\n\n`;
       if (notes.morphe) unifiedReleaseBody += notes.morphe;
       if (notes.piko) unifiedReleaseBody += notes.piko;
       if (notes.adobo) unifiedReleaseBody += notes.adobo;
@@ -339,8 +343,7 @@ async function processApp(appKey, desktop, patches) {
 
       for (const apk of patchedApksList) {
         try {
-          console.log(`
-📤 Uploading via GitHub CLI: ${apk.name}`);
+          console.log(`\n📤 Uploading via GitHub CLI: ${apk.name}`);
           execSync(`gh release upload "latest" "${apk.path}" --clobber`, { stdio: 'inherit' });
         } catch (uploadErr) {
           console.error(`❌ Upload Failed for ${apk.name}: ${uploadErr.message}`);
