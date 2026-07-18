@@ -116,15 +116,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/google/4285F4",
     exclude: [],
-    enable: [
-      "Enable voice typing in incognito",
-      "Enable key shape selection",
-      "Enable clipboard in incognito",
-      "Enable access points menu redesign",
-      "Enable Undo feature",
-      "Enable OCR feature",
-      "Always-incognito mode"
-    ]
+    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"]
   },
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
@@ -133,8 +125,6 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
     exclude: [],
-    forceLatestFromMirror: true,
-    forceCompat: true
   },
   "solid-explorer": {
     pkg: "pl.solidexplorer2",
