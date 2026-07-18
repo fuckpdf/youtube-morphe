@@ -4,7 +4,7 @@ const { execSync } = require("child_process");
 
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
-const { downloadApk } = require("./lib/apkmirror");
+const { downloadApk, getLatestListing } = require("./lib/apkmirror");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
 
@@ -13,7 +13,15 @@ const DISPLAY_NAMES = {
   "youtube-music": "YT.Music",
   "reddit": "Reddit",
   "twitter": "Twitter",
-  "instagram": "Instagram"
+  "instagram": "Instagram",
+  "github": "GitHub",
+  "niagara-launcher": "Niagara Launcher",
+  "pydroid3": "PyDroid3",
+  "smart-launcher": "Smart Launcher",
+  "wps-office": "WPS Office",
+  "gboard": "Gboard",
+  "speedtest": "Speedtest",
+  "solid-explorer": "Solid Explorer"
 };
 
 const APPS_CONFIG = {
@@ -60,6 +68,81 @@ const APPS_CONFIG = {
     enable: [],
     forceVersion: "435.0.0.37.76",
     forceBuild: "384109456"
+  },
+  "github": {
+    pkg: "com.github.android",
+    name: "github",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/github/ffffff",
+    exclude: []
+  },
+  "niagara-launcher": {
+    pkg: "bitpit.launcher",
+    name: "niagara-launcher",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
+    exclude: []
+  },
+  "pydroid3": {
+    pkg: "ru.iiec.pydroid3",
+    name: "pydroid3",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=pydroid3.com",
+    exclude: []
+  },
+  "smart-launcher": {
+    pkg: "ginlemon.flowerfree",
+    name: "smart-launcher",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=smartlauncher.net",
+    exclude: []
+  },
+  "wps-office": {
+    pkg: "cn.wps.moffice_eng",
+    name: "wps-office",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
+    exclude: []
+  },
+  "gboard": {
+    pkg: "com.google.android.inputmethod.latin",
+    name: "gboard",
+    patchSource: "adobo",
+    arch: "arm64-v8a",
+    icon: "https://cdn.simpleicons.org/google/4285F4",
+    exclude: [],
+    enable: [
+      "Enable voice typing in incognito",
+      "Enable key shape selection",
+      "Enable clipboard in incognito",
+      "Enable access points menu redesign",
+      "Enable Undo feature",
+      "Enable OCR feature",
+      "Always-incognito mode"
+    ]
+  },
+  "speedtest": {
+    pkg: "org.zwanoo.android.speedtest",
+    name: "speedtest",
+    patchSource: "xtra",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
+    exclude: [],
+    forceLatestFromMirror: true,
+    forceCompat: true
+  },
+  "solid-explorer": {
+    pkg: "pl.solidexplorer2",
+    name: "solid-explorer",
+    patchSource: "xtra",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
+    exclude: []
   }
 };
 
@@ -68,6 +151,15 @@ async function processApp(appKey, desktop, patches) {
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
 
   let selectedVersion = config.forceVersion;
+
+  if (!selectedVersion && config.forceLatestFromMirror) {
+    const latest = await getLatestListing(config.name);
+    if (!latest || !latest.version) {
+      throw new Error("Could not determine latest version from APKMirror listing");
+    }
+    selectedVersion = latest.version;
+    console.log(`🔎 Using latest published APKMirror version (not patch-recommended): ${selectedVersion}`);
+  }
 
   if (!selectedVersion) {
     const output = execSync(
@@ -107,6 +199,9 @@ async function processApp(appKey, desktop, patches) {
   let extraArgs = "";
   const argParts = [];
 
+  if (config.forceCompat) {
+    argParts.push("--force");
+  }
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
@@ -145,9 +240,12 @@ async function processApp(appKey, desktop, patches) {
     });
     const desktop = desktopObj.name;
 
-    const patchesPool = { morphe: null, piko: null };
+    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, xtra: null };
     let morpheNotes = "";
     let pikoNotes = "";
+    let hoodlesNotes = "";
+    let adoboNotes = "";
+    let xtraNotes = "";
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? Object.keys(APPS_CONFIG) : [targetApp];
@@ -194,6 +292,68 @@ ${pikoMpp.body}
 `;
     }
 
+    const needsHoodles = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "hoodles");
+    if (needsHoodles) {
+      const hoodlesMpp = await downloadLatestGithubAsset({
+        owner: "hoo-dles",
+        repo: "morphe-patches",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.hoodles = hoodlesMpp.name;
+
+      hoodlesNotes = `
+<details>
+<summary>🍃 <b>hoo-dles Release Notes (${hoodlesMpp.tag})</b></summary>
+<br>
+
+${hoodlesMpp.body}
+
+</details>
+`;
+    }
+
+    const needsAdobo = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "adobo");
+    if (needsAdobo) {
+      const adoboMpp = await downloadLatestGithubAsset({
+        owner: "jkennethcarino",
+        repo: "adobo",
+        prerelease: true,
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.adobo = adoboMpp.name;
+
+      adoboNotes = `
+<details>
+<summary>🥘 <b>Adobo Release Notes (${adoboMpp.tag})</b></summary>
+<br>
+
+${adoboMpp.body}
+
+</details>
+`;
+    }
+
+    const needsXtra = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "xtra");
+    if (needsXtra) {
+      const xtraMpp = await downloadLatestGithubAsset({
+        owner: "BholeyKaBhakt",
+        repo: "android-patches-xtra",
+        match: (n) => n.endsWith(".mpp"),
+      });
+      patchesPool.xtra = xtraMpp.name;
+
+      xtraNotes = `
+<details>
+<summary>🧩 <b>Android Patches Xtra Release Notes (${xtraMpp.tag})</b></summary>
+<br>
+
+${xtraMpp.body}
+
+</details>
+`;
+    }
+
     const patchedApksList = [];
 
     for (const appKey of appsToProcess) {
@@ -208,21 +368,23 @@ ${pikoMpp.body}
     if (patchedApksList.length > 0) {
       const date = new Date();
       const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
-      const releaseTag = `build-${tagDateStr}`;
       const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
 
       let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
 
       for (const apk of patchedApksList) {
-        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
+        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}**\n`;
       }
 
       unifiedReleaseBody += `\n---\n\n`;
 
       if (needsMorphe && morpheNotes) unifiedReleaseBody += morpheNotes;
       if (needsPiko && pikoNotes) unifiedReleaseBody += pikoNotes;
+      if (needsHoodles && hoodlesNotes) unifiedReleaseBody += hoodlesNotes;
+      if (needsAdobo && adoboNotes) unifiedReleaseBody += adoboNotes;
+      if (needsXtra && xtraNotes) unifiedReleaseBody += xtraNotes;
 
-      console.log(`\n📢 Creating Unified Release: ${releaseTag}`);
+      console.log(`\n📢 Creating Unified Release: latest`);
       const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
 
       let microgUploaded = false;
