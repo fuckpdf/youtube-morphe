@@ -83,7 +83,7 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
-    exclude: []
+    exclude: [],
     forceVersion : "1.16.8"
   },
   "pydroid3": {
@@ -126,7 +126,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
     exclude: [],
-      forceVersion: "7.0.7"
+    forceVersion: "7.0.7"
   },
   "solid-explorer": {
     pkg: "pl.solidexplorer2",
