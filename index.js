@@ -138,6 +138,22 @@ const APPS_CONFIG = {
   }
 };
 
+const PROCESS_ORDER = [
+  "youtube",
+  "youtube-music",
+  "reddit",
+  "twitter",
+  "instagram",
+  "github",
+  "niagara-launcher",
+  "pydroid3",
+  "smart-launcher",
+  "wps-office",
+  "gboard",
+  "speedtest",
+  "solid-explorer"
+];
+
 async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
@@ -167,8 +183,6 @@ async function processApp(appKey, desktop, patches) {
 
   if (!selectedVersion) return null;
 
-  // GitHub üzerinden indirme blokları (try-catch) tamamen kaldırıldı.
-  // Sadece apkmirror fonksiyonu doğrudan çağrılıyor.
   const apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
 
   let extraArgs = "";
@@ -223,7 +237,7 @@ async function processApp(appKey, desktop, patches) {
     let xtraNotes = "";
 
     const targetApp = process.env.TARGET_APP || "all";
-    const appsToProcess = targetApp === "all" ? Object.keys(APPS_CONFIG) : [targetApp];
+    const appsToProcess = targetApp === "all" ? PROCESS_ORDER : [targetApp];
 
     const needsMorphe = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "morphe");
     if (needsMorphe) {
