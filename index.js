@@ -67,8 +67,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/x/000000",
     exclude: ["Dynamic color"],
-    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"],
-    forceCompat: true
+    enable: ["Bring back twitter", "Disunify xchat system", "Export all activities"]
   },
   "instagram": {
     pkg: "com.instagram.android",
@@ -87,8 +86,7 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/github/ffffff",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   },
   "niagara-launcher": {
     pkg: "bitpit.launcher",
@@ -97,8 +95,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
     exclude: [],
-    forceVersion : "1.16.8",
-    forceCompat: true
+    forceVersion : "1.16.8"
   },
   "pydroid3": {
     pkg: "ru.iiec.pydroid3",
@@ -106,8 +103,7 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=pydroid3.com",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   },
   "smart-launcher": {
     pkg: "ginlemon.flowerfree",
@@ -115,8 +111,7 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=smartlauncher.net",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   },
   "wps-office": {
     pkg: "cn.wps.moffice_eng",
@@ -124,8 +119,7 @@ const APPS_CONFIG = {
     patchSource: "hoodles",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   },
   "gboard": {
     pkg: "com.google.android.inputmethod.latin",
@@ -134,8 +128,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/google/4285F4",
     exclude: [],
-    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"],
-    forceCompat: true
+    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"]
   },
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
@@ -152,8 +145,7 @@ const APPS_CONFIG = {
     patchSource: "rushi",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   },
   "brave": {
     pkg: "com.brave.browser",
@@ -161,8 +153,7 @@ const APPS_CONFIG = {
     patchSource: "bufferk",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/brave/FB542B",
-    exclude: [],
-    forceCompat: true
+    exclude: []
   }
 };
 
@@ -191,6 +182,7 @@ async function processApp(appKey, desktop, patches) {
 
   let selectedVersion = config.forceVersion;
 
+  // Yama aracından desteklenen sürümü çekmeyi dene
   if (!selectedVersion) {
     try {
       const output = execSync(
@@ -207,10 +199,13 @@ async function processApp(appKey, desktop, patches) {
     }
   }
 
+  // Yama aracı sürüm listelemiyorsa veya evrensel bir yamaysa
   if (!selectedVersion) {
     if (!isApkMirrorApp) {
+      // GithubDL uygulamaları için sürüm önemsiz, depodaki dosyayı çekeceğiz
       selectedVersion = "latest";
     } else {
+      // APKMirror için en günceli bulmayı dene
       const latest = await apkmirror.getLatestListing(config.name);
       if (latest && latest.version) {
         selectedVersion = latest.version;
@@ -223,15 +218,13 @@ async function processApp(appKey, desktop, patches) {
     throw new Error("Uygun bir sürüm numarası belirlenemedi.");
   }
 
+  // İndirme fonksiyonunu otomatik seç
   const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
   const apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
 
   let extraArgs = "";
   const argParts = [];
 
-  if (config.forceCompat) {
-    argParts.push("--force");
-  }
   if (config.exclude && config.exclude.length > 0) {
     argParts.push(...config.exclude.map(p => `--disable "${p}"`));
   }
@@ -358,12 +351,15 @@ async function processApp(appKey, desktop, patches) {
     for (const appKey of appsToProcess) {
       try {
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
+        // Sadece başarılı olanlar (result varsa) listeye eklenir. 
+        // Hata alan uygulamalar listeye girmediği için Release'de yayınlanmaz!
         if (result) patchedApksList.push(result);
       } catch (err) {
         console.error(`❌ ${appKey.toUpperCase()} failed, skipping: ${err.message}`);
       }
     }
 
+    // Listeye eklenecek uyguluma varsa GitHub Release oluşturur
     if (patchedApksList.length > 0) {
       const date = new Date();
       const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
