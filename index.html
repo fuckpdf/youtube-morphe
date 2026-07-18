@@ -130,7 +130,7 @@
                 <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-500">
                     Patched APKs Hub
                 </h1>
-                <p class="text-zinc-500 text-lg">Latest builds patched with Morphe &amp; Piko</p>
+                <p class="text-zinc-500 text-lg">Latest builds patched with hoo-dles, Adobo &amp; Xtra</p>
             </header>
 
             <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.08s;">
@@ -154,7 +154,7 @@
                         <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
                             <div class="icon-well w-14 h-14 rounded-xl flex items-center justify-center p-2.5 border border-white/5"
                                  :style="{ background: `radial-gradient(circle at 30% 20%, ${ACCENTS[appKey]}22, #0a0a0b)` }">
-                                <img :src="appData[appKey].icon" :alt="appData[appKey].displayName" class="w-full h-full object-contain">
+                                <img :src="appData[appKey].icon" @error="handleImageError(appKey)" :alt="appData[appKey].displayName" class="w-full h-full object-contain">
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-lg font-bold text-zinc-100 tracking-tight">{{ appData[appKey].displayName }}</h3>
@@ -181,7 +181,7 @@
                     </div>
                     <div v-else class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-50 animate-fade-in" :style="{ animationDelay: `${0.14 + (index * 0.06)}s` }">
                         <div class="w-14 h-14 bg-[#0a0a0b] rounded-xl flex items-center justify-center p-2.5 border border-white/5">
-                            <img :src="ICONS[appKey]" :alt="DISPLAY_NAMES[appKey]" class="w-full h-full object-contain grayscale opacity-30">
+                            <img :src="ICONS[appKey]" @error="handleImageError(appKey)" :alt="DISPLAY_NAMES[appKey]" class="w-full h-full object-contain grayscale opacity-30">
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-zinc-600 tracking-tight">{{ DISPLAY_NAMES[appKey] }}</h3>
@@ -202,7 +202,7 @@
             <footer class="mt-16 pb-8 text-center text-zinc-600 text-sm animate-fade-in" style="animation-delay: 0.4s;">
                 <p>Automatically built via GitHub Actions.</p>
                 <p class="mt-1">Source code:
-                    <a :href="'https://github.com/' + REPO" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white hover:underline transition-colors">youtube-morphe</a>
+                    <a :href="'https://github.com/' + REPO" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white hover:underline transition-colors">fuckpdf/youtube-morphe</a>
                 </p>
             </footer>
         </template>
@@ -216,33 +216,39 @@
                 const REPO = "fuckpdf/youtube-morphe";
 
                 const ICONS = {
-                    "youtube": "https://cdn.simpleicons.org/youtube/FF0000",
-                    "youtube-music": "https://cdn.simpleicons.org/youtubemusic/FF0000",
-                    "reddit": "https://cdn.simpleicons.org/reddit/FF4500",
-                    "twitter": "https://cdn.simpleicons.org/x/ffffff",
-                    "instagram": "https://cdn.simpleicons.org/instagram/E4405F",
-                    "microg": "https://cdn.simpleicons.org/google/4285F4"
+                    "github": "https://cdn.simpleicons.org/github/ffffff",
+                    "niagara": "https://cdn.simpleicons.org/android/3DDC84",
+                    "pydroid": "https://cdn.simpleicons.org/python/3776AB",
+                    "smartlauncher": "https://cdn.simpleicons.org/android/3DDC84",
+                    "wps": "https://cdn.simpleicons.org/wps/FF0000",
+                    "gboard": "https://cdn.simpleicons.org/gboard/4285F4",
+                    "speedtest": "https://cdn.simpleicons.org/speedtest/000000",
+                    "solidexplorer": "https://cdn.simpleicons.org/android/3DDC84"
                 };
 
                 const DISPLAY_NAMES = {
-                    "youtube": "YouTube",
-                    "youtube-music": "YT.Music",
-                    "reddit": "Reddit",
-                    "twitter": "Twitter",
-                    "instagram": "Instagram",
-                    "microg": "MicroG (GmsCore)"
+                    "github": "GitHub",
+                    "niagara": "Niagara Launcher",
+                    "pydroid": "PyDroid3",
+                    "smartlauncher": "Smart Launcher",
+                    "wps": "WPS Office",
+                    "gboard": "Gboard",
+                    "speedtest": "Speedtest",
+                    "solidexplorer": "Solid Explorer"
                 };
 
                 const ACCENTS = {
-                    "youtube": "#ff3b3b",
-                    "youtube-music": "#ff6b95",
-                    "reddit": "#ff5700",
-                    "twitter": "#1d9bf0",
-                    "instagram": "#e1306c",
-                    "microg": "#34a853"
+                    "github": "#ffffff",
+                    "niagara": "#3DDC84",
+                    "pydroid": "#3776AB",
+                    "smartlauncher": "#3DDC84",
+                    "wps": "#FF0000",
+                    "gboard": "#4285F4",
+                    "speedtest": "#000000",
+                    "solidexplorer": "#3DDC84"
                 };
 
-                const ORDER = ["youtube", "youtube-music", "instagram", "twitter", "reddit", "microg"];
+                const ORDER = ["github", "niagara", "pydroid", "smartlauncher", "wps", "gboard", "speedtest", "solidexplorer"];
 
                 const loading = ref(true);
                 const errorMsg = ref(null);
@@ -251,16 +257,24 @@
                 const appData = ref({});
                 const changelogHTML = ref(null);
 
+                const handleImageError = (appKey) => {
+                    if(appData.value[appKey]) {
+                        appData.value[appKey].icon = `https://ui-avatars.com/api/?name=${encodeURIComponent(DISPLAY_NAMES[appKey])}&background=random&color=fff`;
+                    }
+                };
+
                 const getObtainiumUrl = (appKey) => {
                     let apkFilter = "";
                     const releaseFilter = "latest";
 
-                    if (appKey === "youtube") { apkFilter = "YouTube-.*\\.apk"; }
-                    else if (appKey === "youtube-music") { apkFilter = "YT\\.Music-.*\\.apk"; }
-                    else if (appKey === "instagram") { apkFilter = "Instagram-.*\\.apk"; }
-                    else if (appKey === "twitter") { apkFilter = "Twitter-.*\\.apk"; }
-                    else if (appKey === "reddit") { apkFilter = "Reddit-.*\\.apk"; }
-                    else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; }
+                    if (appKey === "github") { apkFilter = "GitHub-.*\\.apk"; }
+                    else if (appKey === "niagara") { apkFilter = "Niagara Launcher-.*\\.apk"; }
+                    else if (appKey === "pydroid") { apkFilter = "PyDroid3-.*\\.apk"; }
+                    else if (appKey === "smartlauncher") { apkFilter = "Smart Launcher-.*\\.apk"; }
+                    else if (appKey === "wps") { apkFilter = "WPS Office-.*\\.apk"; }
+                    else if (appKey === "gboard") { apkFilter = "Gboard-.*\\.apk"; }
+                    else if (appKey === "speedtest") { apkFilter = "Speedtest-.*\\.apk"; }
+                    else if (appKey === "solidexplorer") { apkFilter = "Solid Explorer-.*\\.apk"; }
 
                     return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(apkFilter)}&releaseTitleFilterRegEx=${encodeURIComponent(releaseFilter)}`;
                 };
@@ -298,19 +312,18 @@
                             if (!nameLower.endsWith('.apk')) return;
 
                             let appKey = null;
-                            if (nameLower.startsWith("yt.music-")) appKey = "youtube-music";
-                            else if (nameLower.startsWith("youtube-")) appKey = "youtube";
-                            else if (nameLower.startsWith("reddit-")) appKey = "reddit";
-                            else if (nameLower.startsWith("twitter-")) appKey = "twitter";
-                            else if (nameLower.startsWith("instagram-")) appKey = "instagram";
-                            else if (nameLower === "microg.apk") appKey = "microg";
+                            if (nameLower.startsWith("github-")) appKey = "github";
+                            else if (nameLower.startsWith("niagara launcher-")) appKey = "niagara";
+                            else if (nameLower.startsWith("pydroid3-")) appKey = "pydroid";
+                            else if (nameLower.startsWith("smart launcher-")) appKey = "smartlauncher";
+                            else if (nameLower.startsWith("wps office-")) appKey = "wps";
+                            else if (nameLower.startsWith("gboard-")) appKey = "gboard";
+                            else if (nameLower.startsWith("speedtest-")) appKey = "speedtest";
+                            else if (nameLower.startsWith("solid explorer-")) appKey = "solidexplorer";
 
                             if (appKey && !tempAppData[appKey]) {
-                                let versionText = "GmsCore / Support component";
-                                if (appKey !== "microg") {
-                                    const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
-                                    versionText = "v" + rawVersion;
-                                }
+                                const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
+                                const versionText = "v" + rawVersion;
 
                                 tempAppData[appKey] = {
                                     name: asset.name,
@@ -342,7 +355,7 @@
                 return {
                     REPO, ICONS, DISPLAY_NAMES, ACCENTS, ORDER,
                     loading, errorMsg, isRateLimit, latestDate, appData, changelogHTML,
-                    getObtainiumUrl, init
+                    getObtainiumUrl, init, handleImageError
                 };
             }
         }).mount('#app');
