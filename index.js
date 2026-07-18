@@ -132,7 +132,7 @@ const APPS_CONFIG = {
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
     name: "speedtest",
-    patchSource: "xtra",
+    patchSource: "rushi",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
     exclude: [],
@@ -141,7 +141,7 @@ const APPS_CONFIG = {
   "solid-explorer": {
     pkg: "pl.solidexplorer2",
     name: "solid-explorer",
-    patchSource: "xtra",
+    patchSource: "rushi",
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
     exclude: []
@@ -168,35 +168,45 @@ async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
   
-  // Eğer uygulama listesi içindeyse apkmirror kullan, değilse (geri kalanı) githubdl kullan
   const isApkMirrorApp = APKMIRROR_APPS.includes(config.name);
 
   let selectedVersion = config.forceVersion;
 
-  if (!selectedVersion && config.forceLatestFromMirror) {
-    const getListingFunc = isApkMirrorApp ? apkmirror.getLatestListing : githubdl.getLatestListing;
-    const latest = await getListingFunc(config.name);
-    
-    if (!latest || !latest.version) {
-      throw new Error("Could not determine latest version");
+  // Yama aracından desteklenen sürümü çekmeyi dene
+  if (!selectedVersion) {
+    try {
+      const output = execSync(
+        `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
+        { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
+      );
+
+      const versions = extractYoutubeVersions(output);
+      if (versions && versions.length > 0) {
+        selectedVersion = pickLatestVersion(versions);
+      }
+    } catch (e) {
+      console.log(`⚠️ Sürüm listesi alınamadı: ${e.message}`);
     }
-    selectedVersion = latest.version;
-    console.log(`🔎 Using latest published version (not patch-recommended): ${selectedVersion}`);
+  }
+
+  // Yama aracı sürüm listelemiyorsa veya evrensel bir yamaysa
+  if (!selectedVersion) {
+    if (!isApkMirrorApp) {
+      // GithubDL uygulamaları için sürüm önemsiz, depodaki dosyayı çekeceğiz
+      selectedVersion = "latest";
+    } else {
+      // APKMirror için en günceli bulmayı dene
+      const latest = await apkmirror.getLatestListing(config.name);
+      if (latest && latest.version) {
+        selectedVersion = latest.version;
+        console.log(`🔎 Yama önerisi yok, APKMirror'dan en son sürüm kullanılıyor: ${selectedVersion}`);
+      }
+    }
   }
 
   if (!selectedVersion) {
-    const output = execSync(
-      `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
-      { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
-    );
-
-    const versions = extractYoutubeVersions(output);
-    if (!versions.length) return null;
-
-    selectedVersion = pickLatestVersion(versions);
+    throw new Error("Uygun bir sürüm numarası belirlenemedi.");
   }
-
-  if (!selectedVersion) return null;
 
   // İndirme fonksiyonunu otomatik seç
   const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
@@ -246,12 +256,12 @@ async function processApp(appKey, desktop, patches) {
     });
     const desktop = desktopObj.name;
 
-    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, xtra: null };
+    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, rushi: null };
     let morpheNotes = "";
     let pikoNotes = "";
     let hoodlesNotes = "";
     let adoboNotes = "";
-    let xtraNotes = "";
+    let rushiNotes = "";
 
     const targetApp = process.env.TARGET_APP || "all";
     const appsToProcess = targetApp === "all" ? PROCESS_ORDER : [targetApp];
@@ -340,21 +350,22 @@ ${adoboMpp.body}
 `;
     }
 
-    const needsXtra = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "xtra");
-    if (needsXtra) {
-      const xtraMpp = await downloadLatestGithubAsset({
-        owner: "BholeyKaBhakt",
-        repo: "android-patches-xtra",
+    const needsRushi = appsToProcess.some(k => APPS_CONFIG[k].patchSource === "rushi");
+    if (needsRushi) {
+      const rushiMpp = await downloadLatestGithubAsset({
+        owner: "rushiranpise",
+        repo: "morphe-patches",
+        prerelease: true,
         match: (n) => n.endsWith(".mpp"),
       });
-      patchesPool.xtra = xtraMpp.name;
+      patchesPool.rushi = rushiMpp.name;
 
-      xtraNotes = `
+      rushiNotes = `
 <details>
-<summary>🧩 <b>Android Patches Xtra Release Notes (${xtraMpp.tag})</b></summary>
+<summary>⚡ <b>Rushiranpise Release Notes (${rushiMpp.tag})</b></summary>
 <br>
 
-${xtraMpp.body}
+${rushiMpp.body}
 
 </details>
 `;
@@ -388,7 +399,7 @@ ${xtraMpp.body}
       if (needsPiko && pikoNotes) unifiedReleaseBody += pikoNotes;
       if (needsHoodles && hoodlesNotes) unifiedReleaseBody += hoodlesNotes;
       if (needsAdobo && adoboNotes) unifiedReleaseBody += adoboNotes;
-      if (needsXtra && xtraNotes) unifiedReleaseBody += xtraNotes;
+      if (needsRushi && rushiNotes) unifiedReleaseBody += rushiNotes;
 
       console.log(`\n📢 Creating Unified Release: latest`);
       const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
