@@ -221,7 +221,15 @@
                     "reddit": "https://cdn.simpleicons.org/reddit/FF4500",
                     "twitter": "https://cdn.simpleicons.org/x/ffffff",
                     "instagram": "https://cdn.simpleicons.org/instagram/E4405F",
-                    "microg": "https://cdn.simpleicons.org/google/4285F4"
+                    "microg": "https://cdn.simpleicons.org/google/4285F4",
+                    "github": "https://cdn.simpleicons.org/github/ffffff",
+                    "niagara-launcher": "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
+                    "pydroid3": "https://www.google.com/s2/favicons?sz=128&domain=pydroid3.com",
+                    "smart-launcher": "https://www.google.com/s2/favicons?sz=128&domain=smartlauncher.net",
+                    "wps-office": "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
+                    "gboard": "https://cdn.simpleicons.org/google/4285F4",
+                    "speedtest": "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
+                    "solid-explorer": "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com"
                 };
 
                 const DISPLAY_NAMES = {
@@ -230,7 +238,15 @@
                     "reddit": "Reddit",
                     "twitter": "Twitter",
                     "instagram": "Instagram",
-                    "microg": "MicroG (GmsCore)"
+                    "microg": "MicroG (GmsCore)",
+                    "github": "GitHub",
+                    "niagara-launcher": "Niagara Launcher",
+                    "pydroid3": "PyDroid3",
+                    "smart-launcher": "Smart Launcher",
+                    "wps-office": "WPS Office",
+                    "gboard": "Gboard",
+                    "speedtest": "Speedtest",
+                    "solid-explorer": "Solid Explorer"
                 };
 
                 const ACCENTS = {
@@ -239,10 +255,23 @@
                     "reddit": "#ff5700",
                     "twitter": "#1d9bf0",
                     "instagram": "#e1306c",
-                    "microg": "#34a853"
+                    "microg": "#34a853",
+                    "github": "#e6edf3",
+                    "niagara-launcher": "#2196f3",
+                    "pydroid3": "#3776ab",
+                    "smart-launcher": "#ff9800",
+                    "wps-office": "#ff5b33",
+                    "gboard": "#4285f4",
+                    "speedtest": "#8bc53f",
+                    "solid-explorer": "#4caf50"
                 };
 
-                const ORDER = ["youtube", "youtube-music", "instagram", "twitter", "reddit", "microg"];
+                const ORDER = [
+                    "youtube", "youtube-music", "instagram", "twitter", "reddit",
+                    "github", "niagara-launcher", "pydroid3", "smart-launcher", "wps-office",
+                    "gboard", "speedtest", "solid-explorer",
+                    "microg"
+                ];
 
                 const loading = ref(true);
                 const errorMsg = ref(null);
@@ -260,6 +289,14 @@
                     else if (appKey === "instagram") { apkFilter = "Instagram-.*\\.apk"; }
                     else if (appKey === "twitter") { apkFilter = "Twitter-.*\\.apk"; }
                     else if (appKey === "reddit") { apkFilter = "Reddit-.*\\.apk"; }
+                    else if (appKey === "github") { apkFilter = "GitHub-.*\\.apk"; }
+                    else if (appKey === "niagara-launcher") { apkFilter = "Niagara Launcher-.*\\.apk"; }
+                    else if (appKey === "pydroid3") { apkFilter = "PyDroid3-.*\\.apk"; }
+                    else if (appKey === "smart-launcher") { apkFilter = "Smart Launcher-.*\\.apk"; }
+                    else if (appKey === "wps-office") { apkFilter = "WPS Office-.*\\.apk"; }
+                    else if (appKey === "gboard") { apkFilter = "Gboard-.*\\.apk"; }
+                    else if (appKey === "speedtest") { apkFilter = "Speedtest-.*\\.apk"; }
+                    else if (appKey === "solid-explorer") { apkFilter = "Solid Explorer-.*\\.apk"; }
                     else if (appKey === "microg") { apkFilter = "MicroG\\.apk"; }
 
                     return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(apkFilter)}&releaseTitleFilterRegEx=${encodeURIComponent(releaseFilter)}`;
@@ -303,6 +340,14 @@
                             else if (nameLower.startsWith("reddit-")) appKey = "reddit";
                             else if (nameLower.startsWith("twitter-")) appKey = "twitter";
                             else if (nameLower.startsWith("instagram-")) appKey = "instagram";
+                            else if (nameLower.startsWith("github-")) appKey = "github";
+                            else if (nameLower.startsWith("niagara launcher-")) appKey = "niagara-launcher";
+                            else if (nameLower.startsWith("pydroid3-")) appKey = "pydroid3";
+                            else if (nameLower.startsWith("smart launcher-")) appKey = "smart-launcher";
+                            else if (nameLower.startsWith("wps office-")) appKey = "wps-office";
+                            else if (nameLower.startsWith("gboard-")) appKey = "gboard";
+                            else if (nameLower.startsWith("speedtest-")) appKey = "speedtest";
+                            else if (nameLower.startsWith("solid explorer-")) appKey = "solid-explorer";
                             else if (nameLower === "microg.apk") appKey = "microg";
 
                             if (appKey && !tempAppData[appKey]) {
