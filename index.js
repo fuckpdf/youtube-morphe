@@ -233,9 +233,9 @@ async function processApp(appKey, desktop, patches) {
       const date = new Date();
       const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
       const releaseTag = `build-${tagDateStr}`;
-      const releaseName = `Custom Builds (${tagDateStr})`;
+      const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
 
-      let unifiedReleaseBody = `### Latest Patched APKs\n\n`;
+      let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
       for (const apk of patchedApksList) {
         unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}** (${apk.version})\n`;
       }
