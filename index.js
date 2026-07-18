@@ -4,9 +4,11 @@ const { execSync } = require("child_process");
 
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
-const { downloadApk, getLatestListing } = require("./lib/apkmirror");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
+
+const apkmirror = require("./lib/apkmirror");
+const githubdl = require("./lib/githubdl");
 
 const DISPLAY_NAMES = {
   "youtube": "YouTube",
@@ -23,6 +25,14 @@ const DISPLAY_NAMES = {
   "speedtest": "Speedtest",
   "solid-explorer": "Solid Explorer"
 };
+
+// Sadece APKMirror üzerinden indirilecek uygulamalar
+const APKMIRROR_APPS = [
+  "youtube",
+  "youtube-music",
+  "reddit",
+  "twitter"
+];
 
 const APPS_CONFIG = {
   "youtube": {
@@ -157,16 +167,21 @@ const PROCESS_ORDER = [
 async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
+  
+  // Eğer uygulama listesi içindeyse apkmirror kullan, değilse (geri kalanı) githubdl kullan
+  const isApkMirrorApp = APKMIRROR_APPS.includes(config.name);
 
   let selectedVersion = config.forceVersion;
 
   if (!selectedVersion && config.forceLatestFromMirror) {
-    const latest = await getLatestListing(config.name);
+    const getListingFunc = isApkMirrorApp ? apkmirror.getLatestListing : githubdl.getLatestListing;
+    const latest = await getListingFunc(config.name);
+    
     if (!latest || !latest.version) {
-      throw new Error("Could not determine latest version from APKMirror listing");
+      throw new Error("Could not determine latest version");
     }
     selectedVersion = latest.version;
-    console.log(`🔎 Using latest published APKMirror version (not patch-recommended): ${selectedVersion}`);
+    console.log(`🔎 Using latest published version (not patch-recommended): ${selectedVersion}`);
   }
 
   if (!selectedVersion) {
@@ -183,7 +198,9 @@ async function processApp(appKey, desktop, patches) {
 
   if (!selectedVersion) return null;
 
-  const apkPath = await downloadApk(selectedVersion, config.name, config.forceBuild);
+  // İndirme fonksiyonunu otomatik seç
+  const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
+  const apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
 
   let extraArgs = "";
   const argParts = [];
