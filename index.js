@@ -6,7 +6,7 @@ const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { downloadApk } = require("./lib/apkmirror");
 const { patchApk } = require("./lib/patcher");
-const { ensureRelease, uploadPatchedApk } = require("./lib/release");
+const { ensureRelease } = require("./lib/release");
 
 const DISPLAY_NAMES = {
   "github": "GitHub",
@@ -27,7 +27,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/github/ffffff",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   },
   "niagara": {
     pkg: "bitpit.launcher",
@@ -36,7 +37,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/android/3DDC84",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   },
   "pydroid": {
     pkg: "ru.iiec.pydroid3",
@@ -45,7 +47,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/python/3776AB",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   },
   "smartlauncher": {
     pkg: "ginlemon.flowerfree",
@@ -54,7 +57,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/android/3DDC84",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   },
   "wps": {
     pkg: "cn.wps.moffice_eng",
@@ -63,7 +67,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/wps/FF0000",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   },
   "gboard": {
     pkg: "com.google.android.inputmethod.latin",
@@ -80,7 +85,8 @@ const APPS_CONFIG = {
       "Enable Undo feature",
       "Enable OCR feature",
       "Always-incognito mode"
-    ]
+    ],
+    forceLatest: true
   },
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
@@ -99,7 +105,8 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/android/3DDC84",
     exclude: [],
-    enable: []
+    enable: [],
+    forceLatest: true
   }
 };
 
@@ -237,13 +244,19 @@ async function processApp(appKey, desktop, patches) {
       if (notes.adobo) unifiedReleaseBody += notes.adobo;
       if (notes.xtra) unifiedReleaseBody += notes.xtra;
 
-      const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
+      await ensureRelease("latest", releaseName, unifiedReleaseBody);
 
       for (const apk of patchedApksList) {
-        await uploadPatchedApk(release, apk.path);
+        try {
+          console.log(`\n📤 Uploading via GitHub CLI: ${apk.name}`);
+          execSync(`gh release upload "latest" "${apk.path}" --clobber`, { stdio: 'inherit' });
+        } catch (uploadErr) {
+          console.error(`❌ Upload Failed for ${apk.name}: ${uploadErr.message}`);
+        }
       }
     }
   } catch (err) {
+    console.error("FATAL ERROR:", err);
     process.exit(1);
   }
 })();
