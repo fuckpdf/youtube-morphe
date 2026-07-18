@@ -208,9 +208,18 @@ async function processApp(appKey, desktop, patches) {
 
     for (const appKey of appsToProcess) {
       try {
+        console.log(`\n⏳ Isleniyor: ${APPS_CONFIG[appKey].name.toUpperCase()}`);
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
-        if (result) patchedApksList.push(result);
-      } catch (err) {}
+        
+        if (result) {
+          patchedApksList.push(result);
+          console.log(`✅ Basarili: ${APPS_CONFIG[appKey].name}`);
+        } else {
+          console.log(`⚠️ Atlandi: ${APPS_CONFIG[appKey].name}`);
+        }
+      } catch (err) {
+        console.error(`❌ BASARISIZ (${APPS_CONFIG[appKey].name}): ${err.message}`);
+      }
     }
 
     if (patchedApksList.length > 0) {
