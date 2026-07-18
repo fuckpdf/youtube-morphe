@@ -183,6 +183,18 @@ async function processApp(appKey, desktop, patches) {
       }
       apkPath = destPath;
       console.log(`✅ Instagram base downloaded: ${apkPath}`);
+    } else if (appKey === "niagara-launcher") {
+      console.log(`⚠️ APKMirror failed (${e.message}). Downloading from custom GitHub repo...`);
+      const customUrl = "https://github.com/fuckpdf/Depo/releases/download/NiagaraLauncher/NiagaraLauncher.apk";
+      const destPath = path.resolve(process.cwd(), "niagara-launcher-base.apk");
+
+      execSync(`curl -L -o "${destPath}" "${customUrl}"`, { stdio: 'inherit' });
+
+      if (!fs.existsSync(destPath) || fs.statSync(destPath).size < 1000) {
+        throw new Error("Downloaded file from custom repo is invalid.");
+      }
+      apkPath = destPath;
+      console.log(`✅ Niagara Launcher base downloaded: ${apkPath}`);
     } else {
       throw e;
     }
