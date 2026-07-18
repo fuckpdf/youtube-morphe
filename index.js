@@ -1,12 +1,53 @@
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const cp = require("child_process");
+
+const origExecSync = cp.execSync;
+cp.execSync = function (cmd, opts) {
+  if (typeof cmd === "string" && cmd.includes(" patch ") && cmd.includes(".jar")) {
+    try {
+      const res = origExecSync(cmd, { ...opts, stdio: "pipe" });
+      const out = res ? res.toString() : "";
+      process.stdout.write(out);
+      if (out.includes("Applying 0 patches")) throw new Error("0 patches applied");
+      return res;
+    } catch (e) {
+      const out = e.stdout ? e.stdout.toString() : "";
+      const err = e.stderr ? e.stderr.toString() : "";
+      process.stdout.write(out);
+      process.stderr.write(err);
+      if (out.includes("Applying 0 patches") || err.includes("Applying 0 patches")) {
+        throw new Error("0 patches applied");
+      }
+      throw e;
+    }
+  }
+  return origExecSync(cmd, opts);
+};
+
+const origSpawnSync = cp.spawnSync;
+cp.spawnSync = function (cmd, args, opts) {
+  const full = [cmd, ...(args || [])].join(" ");
+  if (full.includes(" patch ") && full.includes(".jar")) {
+    const res = origSpawnSync(cmd, args, { ...opts, stdio: "pipe" });
+    const out = res.stdout ? res.stdout.toString() : "";
+    const err = res.stderr ? res.stderr.toString() : "";
+    process.stdout.write(out);
+    process.stderr.write(err);
+    if (out.includes("Applying 0 patches") || err.includes("Applying 0 patches")) {
+      throw new Error("0 patches applied");
+    }
+    return res;
+  }
+  return origSpawnSync(cmd, args, opts);
+};
+
+const { execSync } = cp;
 
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
-
 const apkmirror = require("./lib/apkmirror");
 const githubdl = require("./lib/githubdl");
 
@@ -27,7 +68,6 @@ const DISPLAY_NAMES = {
   "brave": "Brave"
 };
 
-// Sadece APKMirror üzerinden indirilecek uygulamalar
 const APKMIRROR_APPS = [
   "youtube",
   "youtube-music",
@@ -182,7 +222,6 @@ async function processApp(appKey, desktop, patches) {
 
   let selectedVersion = config.forceVersion;
 
-  // Yama aracından desteklenen sürümü çekmeyi dene
   if (!selectedVersion) {
     try {
       const output = execSync(
@@ -199,17 +238,13 @@ async function processApp(appKey, desktop, patches) {
     }
   }
 
-  // Yama aracı sürüm listelemiyorsa veya evrensel bir yamaysa
   if (!selectedVersion) {
     if (!isApkMirrorApp) {
-      // GithubDL uygulamaları için sürüm önemsiz, depodaki dosyayı çekeceğiz
       selectedVersion = "latest";
     } else {
-      // APKMirror için en günceli bulmayı dene
       const latest = await apkmirror.getLatestListing(config.name);
       if (latest && latest.version) {
         selectedVersion = latest.version;
-        console.log(`🔎 Yama önerisi yok, APKMirror'dan en son sürüm kullanılıyor: ${selectedVersion}`);
       }
     }
   }
@@ -218,7 +253,6 @@ async function processApp(appKey, desktop, patches) {
     throw new Error("Uygun bir sürüm numarası belirlenemedi.");
   }
 
-  // İndirme fonksiyonunu otomatik seç
   const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
   const apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
 
@@ -351,15 +385,12 @@ async function processApp(appKey, desktop, patches) {
     for (const appKey of appsToProcess) {
       try {
         const result = await processApp(appKey, desktop, patchesPool[APPS_CONFIG[appKey].patchSource]);
-        // Sadece başarılı olanlar (result varsa) listeye eklenir. 
-        // Hata alan uygulamalar listeye girmediği için Release'de yayınlanmaz!
         if (result) patchedApksList.push(result);
       } catch (err) {
         console.error(`❌ ${appKey.toUpperCase()} failed, skipping: ${err.message}`);
       }
     }
 
-    // Listeye eklenecek uyguluma varsa GitHub Release oluşturur
     if (patchedApksList.length > 0) {
       const date = new Date();
       const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
