@@ -1,53 +1,12 @@
 const fs = require("fs");
 const path = require("path");
-const cp = require("child_process");
-
-const origExecSync = cp.execSync;
-cp.execSync = function (cmd, opts) {
-  if (typeof cmd === "string" && cmd.includes(" patch ") && cmd.includes(".jar")) {
-    try {
-      const res = origExecSync(cmd, { ...opts, stdio: "pipe" });
-      const out = res ? res.toString() : "";
-      process.stdout.write(out);
-      if (out.includes("Applying 0 patches")) throw new Error("0 patches applied");
-      return res;
-    } catch (e) {
-      const out = e.stdout ? e.stdout.toString() : "";
-      const err = e.stderr ? e.stderr.toString() : "";
-      process.stdout.write(out);
-      process.stderr.write(err);
-      if (out.includes("Applying 0 patches") || err.includes("Applying 0 patches")) {
-        throw new Error("0 patches applied");
-      }
-      throw e;
-    }
-  }
-  return origExecSync(cmd, opts);
-};
-
-const origSpawnSync = cp.spawnSync;
-cp.spawnSync = function (cmd, args, opts) {
-  const full = [cmd, ...(args || [])].join(" ");
-  if (full.includes(" patch ") && full.includes(".jar")) {
-    const res = origSpawnSync(cmd, args, { ...opts, stdio: "pipe" });
-    const out = res.stdout ? res.stdout.toString() : "";
-    const err = res.stderr ? res.stderr.toString() : "";
-    process.stdout.write(out);
-    process.stderr.write(err);
-    if (out.includes("Applying 0 patches") || err.includes("Applying 0 patches")) {
-      throw new Error("0 patches applied");
-    }
-    return res;
-  }
-  return origSpawnSync(cmd, args, opts);
-};
-
-const { execSync } = cp;
+const { execSync } = require("child_process");
 
 const { downloadLatestGithubAsset } = require("./lib/github");
 const { extractYoutubeVersions, pickLatestVersion } = require("./lib/versions");
 const { patchApk } = require("./lib/patcher");
 const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/release");
+
 const apkmirror = require("./lib/apkmirror");
 const githubdl = require("./lib/githubdl");
 
