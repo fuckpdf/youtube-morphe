@@ -1,1547 +1,882 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>youtube-morphe — Downloads</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+<!DOCTYPE html>
+
+<html lang="en" class="dark">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Automatically built and patched APKs, updated via GitHub Actions.">
+
+    <title>Patched APKs Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@18.0.6/lib/marked.umd.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
+    <script src="https://unpkg.com/vue@3.5.34/dist/vue.global.js"></script>
+
+
+
     <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
 
-      :root {
-        --bg: #07090d;
-        --bg2: #0c1018;
-        --bg3: #131a23;
-        --bg4: #192030;
-        --bg5: #1f2a3c;
-        --br: #1e2d40;
-        --br2: #28394f;
-        --br3: #344d68;
-        --tx: #c8d8ea;
-        --tx2: #8fa8c0;
-        --tx3: #4d6a84;
-        --acc: #4c9eff;
-        --acc-dim: rgba(76, 158, 255, 0.1);
-        --acc-border: rgba(76, 158, 255, 0.25);
-        --acc-text: #82bfff;
-        --grn: #23d18b;
-        --grn-dim: rgba(35, 209, 139, 0.1);
-        --grn-text: #4ddfaa;
-        --amb: #e8a838;
-        --amb-text: #f2c46a;
-        --red-text: #f87171;
-        --apk: #a78bfa;
-        --apk-dim: rgba(167, 139, 250, 0.09);
-        --apk-border: rgba(167, 139, 250, 0.25);
-        --apk-text: #c4b5fd;
-        --r: 8px;
-        --rl: 10px;
-        --fn: "Inter", system-ui, sans-serif;
-        --mo: "JetBrains Mono", monospace;
-      }
+        :root { --accent: #38bdf8; }
 
-      body {
-        background: var(--bg);
-        color: var(--tx);
-        font-family: var(--fn);
-        font-size: 14px;
-        line-height: 1.5;
-        min-height: 100vh;
-        -webkit-font-smoothing: antialiased;
-      }
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-        background:
-          radial-gradient(
-            ellipse 70% 45% at 50% 0%,
-            rgba(76, 158, 255, 0.05) 0%,
-            transparent 70%
-          ),
-          radial-gradient(
-            ellipse 40% 30% at 90% 90%,
-            rgba(35, 209, 139, 0.03) 0%,
-            transparent 65%
-          );
-      }
 
-      .wrap {
-        max-width: 840px;
-        margin: 0 auto;
-        padding: 1.25rem 1rem 4rem;
-        position: relative;
-        z-index: 1;
-      }
 
-      /* ── Header ── */
-      .hd {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 1.25rem;
-      }
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-      }
-      .brand-ico {
-        width: 34px;
-        height: 34px;
-        flex-shrink: 0;
-        border-radius: 9px;
-        background: var(--bg3);
-        border: 1px solid var(--br2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--acc-text);
-      }
-      .brand-tx {
-        min-width: 0;
-      }
-      .brand-owner {
-        font-size: 10px;
-        color: var(--tx3);
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-      .brand-repo {
-        font-size: 15px;
-        font-weight: 800;
-        color: var(--tx);
-        letter-spacing: -0.02em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .ref-btn {
-        flex-shrink: 0;
-        background: var(--bg3);
-        border: 1px solid var(--br2);
-        color: var(--tx2);
-        padding: 7px 13px;
-        border-radius: var(--r);
-        cursor: pointer;
-        font-size: 12px;
-        font-family: var(--fn);
-        font-weight: 600;
-        transition: all 0.15s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .ref-btn:hover {
-        background: var(--bg4);
-        border-color: var(--acc);
-        color: var(--acc-text);
-      }
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-      /* ── Guide ── */
-      .guide {
-        background: var(--bg2);
-        border: 1px solid var(--br);
-        border-radius: var(--rl);
-        margin-bottom: 1rem;
-        overflow: hidden;
-      }
-      .guide-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 14px;
-        cursor: pointer;
-        user-select: none;
-        gap: 8px;
-        transition: background 0.15s;
-      }
-      .guide-toggle:hover {
-        background: rgba(76, 158, 255, 0.04);
-      }
-      .guide-toggle-l {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-      }
-      .guide-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 7px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--acc-dim);
-        border: 1px solid var(--acc-border);
-        font-size: 14px;
-        line-height: 1;
-      }
-      .guide-label {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--tx);
-      }
-      .guide-sub {
-        font-size: 11px;
-        color: var(--tx3);
-        margin-top: 1px;
-      }
-      .guide-chev {
-        color: var(--tx3);
-        transition: transform 0.2s;
-        font-size: 11px;
-        flex-shrink: 0;
-      }
-      .guide.open .guide-chev {
-        transform: rotate(180deg);
-      }
-      .guide-body {
-        display: none;
-        padding: 0 14px 14px;
-      }
-      .guide.open .guide-body {
-        display: block;
-      }
+        .font-mono { font-family: 'JetBrains Mono', monospace !important; }
 
-      .guide-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 10px;
-        margin-top: 12px;
-      }
 
-      .guide-card {
-        border-radius: var(--r);
-        padding: 13px;
-        border: 1px solid;
-      }
-      .guide-card.apk {
-        background: var(--apk-dim);
-        border-color: var(--apk-border);
-      }
 
-      .guide-card-hd {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 11px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid;
-      }
-      .guide-card.apk .guide-card-hd {
-        border-color: var(--apk-border);
-      }
+        body {
 
-      .guide-card-ico {
-        font-size: 18px;
-        line-height: 1;
-        flex-shrink: 0;
-      }
-      .guide-card-title {
-        font-size: 13px;
-        font-weight: 700;
-        line-height: 1.2;
-      }
-      .guide-card.apk .guide-card-title {
-        color: var(--apk-text);
-      }
-      .guide-card-tag {
-        display: inline-block;
-        margin-top: 3px;
-        font-size: 9px;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 3px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        border: 1px solid;
-      }
-      .guide-card.apk .guide-card-tag {
-        background: var(--apk-dim);
-        color: var(--apk-text);
-        border-color: var(--apk-border);
-      }
+            background-color: #030304;
 
-      .guide-steps {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .guide-step {
-        display: flex;
-        gap: 8px;
-        font-size: 12.5px;
-        color: var(--tx2);
-        line-height: 1.45;
-      }
-      .guide-step-num {
-        flex-shrink: 0;
-        width: 18px;
-        height: 18px;
-        border-radius: 5px;
-        margin-top: 1px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 9px;
-        font-weight: 800;
-        font-family: var(--mo);
-      }
-      .guide-card.apk .guide-step-num {
-        background: rgba(167, 139, 250, 0.18);
-        color: var(--apk-text);
-      }
-      .guide-step strong {
-        color: var(--tx);
-        font-weight: 600;
-      }
+            color: #f4f4f5;
 
-      .guide-deps {
-        margin-top: 11px;
-        padding-top: 10px;
-        border-top: 1px solid;
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .guide-card.apk .guide-deps {
-        border-color: var(--apk-border);
-      }
-      .guide-dep-label {
-        font-size: 10px;
-        color: var(--tx3);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        width: 100%;
-        margin-bottom: 2px;
-      }
-      .dep-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
-        border-radius: var(--r);
-        text-decoration: none;
-        font-size: 11.5px;
-        font-weight: 600;
-        font-family: var(--fn);
-        border: 1px solid;
-        transition: all 0.14s;
-      }
-      .dep-link.microg {
-        background: var(--apk-dim);
-        border-color: var(--apk-border);
-        color: var(--apk-text);
-      }
-      .dep-link.microg:hover {
-        background: rgba(167, 139, 250, 0.2);
-      }
-      .dep-badge {
-        font-size: 8.5px;
-        font-weight: 700;
-        padding: 1px 5px;
-        border-radius: 3px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: 1px solid;
-      }
-      .dep-link.microg .dep-badge {
-        background: var(--apk-dim);
-        color: var(--apk-text);
-        border-color: var(--apk-border);
-      }
+            position: relative;
 
-      .guide-note {
-        margin-top: 10px;
-        padding: 10px 12px;
-        border-radius: var(--r);
-        background: rgba(35, 209, 139, 0.05);
-        border: 1px solid rgba(35, 209, 139, 0.15);
-        font-size: 12px;
-        color: var(--tx2);
-        display: flex;
-        gap: 8px;
-        align-items: flex-start;
-        line-height: 1.5;
-      }
-      .guide-note-ico {
-        flex-shrink: 0;
-        font-size: 13px;
-        margin-top: 1px;
-      }
-      .guide-note strong {
-        color: var(--grn-text);
-        font-weight: 600;
-      }
+            overflow-x: hidden;
 
-      /* ── Metrics ── */
-      .metrics {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        margin-bottom: 1rem;
-      }
-      @media (max-width: 520px) {
-        .metrics {
-          grid-template-columns: repeat(2, 1fr);
         }
-      }
 
-      .met {
-        background: var(--bg2);
-        border: 1px solid var(--br);
-        border-radius: var(--rl);
-        padding: 12px 13px;
-        position: relative;
-        overflow: hidden;
-      }
-      .met::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.014) 0%,
-          transparent 55%
-        );
-      }
-      .met-lbl {
-        font-size: 9.5px;
-        color: var(--tx3);
-        text-transform: uppercase;
-        letter-spacing: 0.09em;
-        font-weight: 700;
-        margin-bottom: 5px;
-      }
-      .met-val {
-        font-size: 22px;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: -0.03em;
-      }
-      .met-val.blue {
-        color: var(--acc-text);
-      }
-      .met-val.green {
-        color: var(--grn-text);
-      }
-      .met-val.sm {
-        font-size: 11px;
-        font-family: var(--mo);
-        font-weight: 600;
-        letter-spacing: 0;
-        padding-top: 4px;
-      }
-      .met-sub {
-        font-size: 10px;
-        color: var(--tx3);
-        margin-top: 3px;
-      }
 
-      /* ── Banner ── */
-      .banner {
-        background: linear-gradient(
-          120deg,
-          rgba(76, 158, 255, 0.07),
-          rgba(76, 158, 255, 0.03)
-        );
-        border: 1px solid var(--acc-border);
-        border-radius: var(--r);
-        padding: 9px 13px;
-        margin-bottom: 1rem;
-        font-size: 12.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .banner-star {
-        color: var(--amb);
-        font-size: 12px;
-        flex-shrink: 0;
-      }
-      .banner code {
-        font-family: var(--mo);
-        font-size: 11.5px;
-        background: rgba(255, 255, 255, 0.06);
-        padding: 1px 6px;
-        border-radius: 4px;
-        color: var(--acc-text);
-        word-break: break-all;
-      }
-      .banner strong {
-        color: var(--acc-text);
-        font-weight: 700;
-      }
 
-      /* ── Legend ── */
-      .legend {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin-bottom: 1rem;
-        padding: 9px 13px;
-        background: var(--bg2);
-        border: 1px solid var(--br);
-        border-radius: var(--r);
-        font-size: 11.5px;
-      }
-      .legend-label {
-        font-size: 10px;
-        color: var(--tx3);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-      .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--tx2);
-      }
-      .legend-swatch {
-        width: 10px;
-        height: 10px;
-        border-radius: 3px;
-        flex-shrink: 0;
-      }
-      .legend-swatch.apk {
-        background: var(--apk);
-      }
+        .ambient {
 
-      /* ── Chart ── */
-      .chart-card {
-        background: var(--bg2);
-        border: 1px solid var(--br);
-        border-radius: var(--rl);
-        padding: 13px 15px;
-        margin-bottom: 1rem;
-      }
-      .sec-hd {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 11px;
-        gap: 8px;
-      }
-      .sec-title {
-        font-size: 10px;
-        font-weight: 700;
-        color: var(--tx2);
-        text-transform: uppercase;
-        letter-spacing: 0.09em;
-      }
-      .sec-hint {
-        font-size: 10px;
-        color: var(--tx3);
-      }
-      .bar-row {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        margin-bottom: 5px;
-      }
-      .bar-row:last-child {
-        margin-bottom: 0;
-      }
-      .bar-row.hidden {
-        display: none;
-      }
-      .bar-lbl {
-        width: 80px;
-        flex-shrink: 0;
-        text-align: right;
-      }
-      .bar-tag {
-        font-size: 10px;
-        font-family: var(--mo);
-        font-weight: 700;
-        color: var(--tx);
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .bar-date {
-        font-size: 9px;
-        color: var(--tx3);
-        display: block;
-        margin-top: 1px;
-      }
-      .bar-track {
-        flex: 1;
-        height: 14px;
-        background: var(--bg3);
-        border-radius: 4px;
-        overflow: hidden;
-        min-width: 0;
-      }
-      .bar-fill {
-        height: 100%;
-        border-radius: 4px;
-        position: relative;
-        transition: width 0.85s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .bar-fill::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          90deg,
-          transparent 40%,
-          rgba(255, 255, 255, 0.08)
-        );
-      }
-      .bar-cnt {
-        font-size: 10.5px;
-        font-weight: 700;
-        font-family: var(--mo);
-        min-width: 32px;
-        text-align: right;
-        color: var(--tx);
-        flex-shrink: 0;
-      }
-      .chart-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: 8px;
-        padding: 5px 10px;
-        background: var(--bg3);
-        border: 1px solid var(--br);
-        border-radius: var(--r);
-        color: var(--tx2);
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.14s;
-      }
-      .chart-toggle:hover {
-        background: var(--bg4);
-        border-color: var(--acc-border);
-        color: var(--acc-text);
-      }
-      .chart-toggle.expanded svg {
-        transform: rotate(180deg);
-      }
+            position: fixed;
 
-      /* ── Controls ── */
-      .controls {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 0.85rem;
-        flex-wrap: wrap;
-      }
-      .ctl-l {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-      }
-      .ctl-lbl {
-        font-size: 10px;
-        color: var(--tx3);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-      select {
-        font-size: 12px;
-        padding: 6px 10px;
-        border-radius: var(--r);
-        border: 1px solid var(--br2);
-        background: var(--bg2);
-        color: var(--tx);
-        cursor: pointer;
-        font-family: var(--fn);
-        font-weight: 500;
-        max-width: 190px;
-      }
-      select:focus {
-        outline: 2px solid var(--acc);
-        outline-offset: 1px;
-      }
-      .srt-btn {
-        background: var(--bg3);
-        border: 1px solid var(--br);
-        color: var(--tx3);
-        padding: 5px 10px;
-        border-radius: var(--r);
-        cursor: pointer;
-        font-size: 11px;
-        font-family: var(--fn);
-        font-weight: 600;
-        letter-spacing: 0.03em;
-        transition: all 0.14s;
-      }
-      .srt-btn.on {
-        border-color: var(--acc-border);
-        color: var(--acc-text);
-        background: var(--acc-dim);
-      }
-      .srt-btn:not(.on):hover {
-        color: var(--tx);
-        border-color: var(--br2);
-      }
-      .ctl-count {
-        font-size: 11px;
-        color: var(--tx3);
-        white-space: nowrap;
-      }
+            inset: 0;
 
-      /* ── Release cards ── */
-      .rel-card {
-        background: var(--bg2);
-        border: 1px solid var(--br);
-        border-radius: var(--rl);
-        overflow: hidden;
-        margin-bottom: 7px;
-        transition:
-          border-color 0.18s,
-          box-shadow 0.18s;
-      }
-      .rel-card:hover {
-        border-color: var(--br2);
-        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.22);
-      }
-      .rel-hd {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 14px;
-        gap: 10px;
-        cursor: pointer;
-        user-select: none;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.01),
-          transparent
-        );
-        border-bottom: 1px solid var(--br);
-        transition: background 0.15s;
-      }
-      .rel-hd:hover {
-        background: rgba(76, 158, 255, 0.035);
-      }
-      .rel-card.collapsed .rel-hd {
-        border-bottom-color: transparent;
-      }
-      .rel-card.collapsed .rel-body {
-        display: none;
-      }
+            z-index: 0;
 
-      .rel-hd-l {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-        flex: 1;
-        flex-wrap: wrap;
-      }
-      .rel-tag-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-      .rel-tag {
-        font-family: var(--mo);
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--acc-text);
-        white-space: nowrap;
-      }
-      .chev {
-        font-size: 10px;
-        color: var(--tx3);
-        transition: transform 0.2s;
-        flex-shrink: 0;
-      }
-      .rel-card.collapsed .chev {
-        transform: rotate(-90deg);
-      }
-      .rel-name {
-        font-size: 11px;
-        color: var(--tx2);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+            pointer-events: none;
 
-      .rel-meta {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        flex-wrap: wrap;
-        font-size: 11px;
-        color: var(--tx3);
-      }
-      .rel-meta .sep {
-        width: 2px;
-        height: 2px;
-        border-radius: 50%;
-        background: var(--tx3);
-        flex-shrink: 0;
-      }
-      .dl-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: var(--acc-dim);
-        border: 1px solid var(--acc-border);
-        color: var(--acc-text);
-        font-family: var(--mo);
-        font-size: 10.5px;
-        font-weight: 700;
-        padding: 1px 7px;
-        border-radius: 20px;
-        white-space: nowrap;
-      }
-      .type-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        font-size: 10px;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 20px;
-        border: 1px solid;
-        white-space: nowrap;
-      }
-      .type-pill.apk-p {
-        background: var(--apk-dim);
-        border-color: var(--apk-border);
-        color: var(--apk-text);
-      }
+            overflow: hidden;
 
-      .rel-hd-r {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        flex-shrink: 0;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-      .badge {
-        font-size: 9.5px;
-        padding: 2px 7px;
-        border-radius: 20px;
-        border: 1px solid;
-        font-weight: 700;
-        white-space: nowrap;
-        letter-spacing: 0.03em;
-      }
-      .b-latest {
-        background: var(--grn-dim);
-        color: var(--grn-text);
-        border-color: rgba(35, 209, 139, 0.28);
-      }
-      .b-pre {
-        background: rgba(232, 168, 56, 0.07);
-        color: var(--amb-text);
-        border-color: rgba(232, 168, 56, 0.22);
-      }
-
-      /* ── Asset section headers ── */
-      .asset-section + .asset-section .asset-section-hd {
-        border-top: 1px solid var(--br);
-      }
-      .asset-section-hd {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 14px;
-        border-bottom: 1px solid var(--br);
-      }
-      .asset-section-ico {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-      }
-      .asset-section-ico.apk {
-        background: var(--apk-dim);
-        border: 1px solid var(--apk-border);
-      }
-      .asset-section-name {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-      }
-      .asset-section-name.apk {
-        color: var(--apk-text);
-      }
-      .asset-section-desc {
-        font-size: 10.5px;
-        color: var(--tx3);
-      }
-
-      /* ── Asset rows ── */
-      .asset-item {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-rows: auto auto;
-        gap: 0 12px;
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--br);
-        transition: background 0.1s;
-        align-items: center;
-      }
-      .asset-item:last-child {
-        border-bottom: none;
-      }
-      .asset-item:hover {
-        background: rgba(76, 158, 255, 0.025);
-      }
-      .asset-item.hidden {
-        display: none;
-      }
-      .asset-item.is-apk {
-        border-left: 2px solid var(--apk-border);
-      }
-
-      .asset-info {
-        grid-column: 1;
-        grid-row: 1;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        min-width: 0;
-      }
-      
-      /* İkon Stilleri */
-      .app-ico {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-        object-fit: contain;
-      }
-
-      .rank-dot {
-        width: 17px;
-        height: 17px;
-        border-radius: 4px;
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 8.5px;
-        font-weight: 800;
-        font-family: var(--mo);
-      }
-      .r1 {
-        background: rgba(232, 168, 56, 0.12);
-        color: var(--amb);
-        border: 1px solid rgba(232, 168, 56, 0.25);
-      }
-      .r2 {
-        background: rgba(180, 180, 180, 0.07);
-        color: #8a9bb0;
-        border: 1px solid rgba(180, 180, 180, 0.15);
-      }
-      .r3 {
-        background: rgba(160, 90, 40, 0.1);
-        color: #b07040;
-        border: 1px solid rgba(160, 90, 40, 0.2);
-      }
-      .r-other {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .asset-name {
-        font-family: var(--mo);
-        font-size: 11.5px;
-        color: var(--tx);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        min-width: 0;
-      }
-
-      .asset-stats {
-        grid-column: 1;
-        grid-row: 2;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 5px;
-      }
-      .sz-lbl {
-        font-size: 10px;
-        color: var(--tx3);
-        font-family: var(--mo);
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      .dl-bar-wrap {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-      }
-      .dl-bar {
-        flex: 1;
-        height: 4px;
-        background: var(--bg4);
-        border-radius: 3px;
-        overflow: hidden;
-        min-width: 20px;
-      }
-      .dl-bar-fill {
-        height: 100%;
-        border-radius: 3px;
-        background: var(--acc);
-        opacity: 0.65;
-      }
-      .dl-count {
-        font-size: 10.5px;
-        font-weight: 700;
-        font-family: var(--mo);
-        color: var(--tx2);
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-      .dl-count-note {
-        font-size: 9.5px;
-        color: var(--tx3);
-        white-space: nowrap;
-      }
-
-      .dl-btn {
-        grid-column: 2;
-        grid-row: 1 / 3;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        padding: 6px 14px;
-        border-radius: 20px;
-        background: var(--acc-dim);
-        border: 1px solid var(--acc-border);
-        color: var(--acc-text);
-        font-size: 11.5px;
-        font-family: var(--fn);
-        font-weight: 600;
-        text-decoration: none;
-        white-space: nowrap;
-        align-self: center;
-        transition: all 0.14s;
-      }
-      .dl-btn:hover {
-        background: rgba(76, 158, 255, 0.22);
-        border-color: var(--acc);
-        color: #fff;
-      }
-      .dl-btn.apk-dl {
-        background: var(--apk-dim);
-        border-color: var(--apk-border);
-        color: var(--apk-text);
-      }
-      .dl-btn.apk-dl:hover {
-        background: rgba(167, 139, 250, 0.22);
-        border-color: var(--apk);
-        color: #fff;
-      }
-
-      .no-asset {
-        padding: 18px;
-        text-align: center;
-        color: var(--tx3);
-        font-size: 13px;
-      }
-
-      /* ── States ── */
-      .state {
-        text-align: center;
-        padding: 3.5rem 1rem;
-        color: var(--tx2);
-        font-size: 14px;
-      }
-      .err {
-        color: var(--red-text);
-        background: rgba(248, 113, 113, 0.05);
-        border: 1px solid rgba(248, 113, 113, 0.17);
-        border-radius: var(--rl);
-      }
-      .spin {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--br);
-        border-top-color: var(--acc);
-        border-radius: 50%;
-        animation: sp 0.7s linear infinite;
-        margin-bottom: 10px;
-      }
-      @keyframes sp {
-        to {
-          transform: rotate(360deg);
         }
-      }
+
+        .ambient span {
+
+            position: absolute;
+
+            border-radius: 9999px;
+
+            filter: blur(120px);
+
+            opacity: 0.16;
+
+        }
+
+        .ambient .b1 { width: 480px; height: 480px; top: -120px; left: -100px; background: #ff2d55; }
+
+        .ambient .b2 { width: 520px; height: 520px; top: 10%; right: -160px; background: #1d9bf0; }
+
+        .ambient .b3 { width: 460px; height: 460px; bottom: -140px; left: 20%; background: #e1306c; }
+
+
+
+        #app { position: relative; z-index: 1; }
+
+
+
+        .glass-panel {
+
+            background: rgba(12, 12, 14, 0.7);
+
+            border: 1px solid rgba(255, 255, 255, 0.08);
+
+            backdrop-filter: blur(10px);
+
+            -webkit-backdrop-filter: blur(10px);
+
+            transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+
+        }
+
+        .glass-panel-muted { background: rgba(255,255,255,0.015); border: 1px dashed rgba(255, 255, 255, 0.1); }
+
+
+
+        .app-card:hover { transform: translateY(-3px); }
+
+        .app-card .icon-well { transition: transform 0.35s ease, background 0.35s ease; }
+
+        .app-card:hover .icon-well { transform: scale(1.06) rotate(-2deg); }
+
+
+
+        ::-webkit-scrollbar { width: 8px; }
+
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+
+
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+
+        .shimmer {
+
+            background: linear-gradient(90deg, #0c0c0e 0%, #1c1c20 50%, #0c0c0e 100%);
+
+            background-size: 800px 100%;
+
+            animation: shimmer 1.6s infinite linear;
+
+        }
+
+
+
+        @keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+
+        .animate-fade-in { animation: fadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+
+
+        .markdown-body h3 { font-size: 1.2rem; font-weight: 700; color: #fff; margin-top: 1.75rem; margin-bottom: 0.6rem; letter-spacing: -0.01em; }
+
+        .markdown-body h3:first-child { margin-top: 0; }
+
+        .markdown-body p { margin-bottom: 1rem; color: #a1a1aa; line-height: 1.65; }
+
+        .markdown-body ul { list-style: none; padding-left: 0; margin-bottom: 1rem; color: #a1a1aa; }
+
+        .markdown-body li { margin-bottom: 0.4rem; padding-left: 1.3rem; position: relative; line-height: 1.55; }
+
+        .markdown-body li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 6px; height: 6px; border-radius: 9999px; background: var(--accent); opacity: 0.7; }
+
+        .markdown-body hr { border-color: rgba(255,255,255,0.08); margin: 1.75rem 0; }
+
+        .markdown-body a { color: #7dd3fc; text-decoration: none; border-bottom: 1px solid rgba(125,211,252,0.25); transition: border-color 0.2s, color 0.2s; }
+
+        .markdown-body a:hover { color: #bae6fd; border-color: rgba(186,230,253,0.6); }
+
+        .markdown-body details { margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+
+        .markdown-body summary { font-weight: 600; cursor: pointer; outline: none; color: #e4e4e7; }
+
     </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div id="root">
-        <div class="state">
-          <div class="spin"></div>
-          <br />Fetching release data…
-        </div>
-      </div>
+
+</head>
+
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30">
+
+
+
+    <div class="ambient"><span class="b1"></span><span class="b2"></span><span class="b3"></span></div>
+
+
+
+    <div id="app" class="flex-grow w-full max-w-5xl mx-auto p-4 md:p-8 flex flex-col">
+
+        <template v-if="loading">
+
+            <header class="text-center mb-10 pt-8">
+
+                <div class="h-11 shimmer rounded-xl w-3/4 md:w-1/2 mx-auto mb-4"></div>
+
+                <div class="h-4 shimmer rounded-lg w-1/2 md:w-1/3 mx-auto"></div>
+
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+
+                <div v-for="i in 15" :key="i" class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+
+                    <div class="w-14 h-14 shimmer rounded-xl"></div>
+
+                    <div class="flex-1 space-y-2">
+
+                        <div class="h-5 shimmer rounded w-1/2"></div>
+
+                        <div class="h-3 shimmer rounded w-1/3"></div>
+
+                    </div>
+
+                    <div class="w-24 h-10 shimmer rounded-xl"></div>
+
+                </div>
+
+            </div>
+
+        </template>
+
+
+
+        <template v-else-if="errorMsg">
+
+            <div class="flex flex-col items-center justify-center flex-grow animate-fade-in">
+
+                <div class="glass-panel p-8 rounded-2xl text-center max-w-md border-red-900/40">
+
+                    <svg class="w-14 h-14 text-red-500/90 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+
+                    <h2 class="text-xl font-bold text-white mb-2 tracking-tight">{{ isRateLimit ? 'Rate Limited' : 'Connection Error' }}</h2>
+
+                    <p class="text-zinc-500 text-sm mb-6">{{ errorMsg }}</p>
+
+                    <button @click="init()" class="bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white border border-sky-500/25 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+
+                        Retry
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </template>
+
+
+
+        <template v-else>
+
+            <header class="text-center mb-10 pt-8 animate-fade-in">
+
+                <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] text-xs font-medium text-zinc-400 tracking-wide">
+
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+
+                    Live &middot; Auto-updated by GitHub Actions
+
+                </div>
+
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-500">
+
+                    Patched APKs Hub
+
+                </h1>
+
+                <p class="text-zinc-500 text-lg">Open-source patched builds · Updated automatically</p>
+
+            </header>
+
+
+
+            <div class="glass-panel rounded-2xl p-5 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 animate-fade-in" style="animation-delay: 0.08s;">
+
+                <div>
+
+                    <h2 class="text-base font-semibold text-zinc-200">Active Build Status</h2>
+
+                    <p class="text-sm text-zinc-500">Last updated: {{ latestDate }}</p>
+
+                </div>
+
+                <span class="px-4 py-1.5 bg-sky-500/10 text-sky-400 border border-sky-500/25 rounded-full font-mono text-xs font-bold flex items-center gap-2 tracking-wide">
+
+                    <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+
+                    UNIFIED RELEASE
+
+                </span>
+
+            </div>
+
+
+
+            <div class="glass-panel rounded-2xl mb-6 overflow-hidden animate-fade-in" style="animation-delay: 0.12s;">
+
+                <button @click="guideOpen = !guideOpen"
+
+                        class="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-white/[0.02] transition-colors">
+
+                    <div class="flex items-center gap-3">
+
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-500/10 border border-sky-500/20 text-base flex-shrink-0">📖</div>
+
+                        <div>
+
+                            <p class="text-sm font-bold text-zinc-200">How to Install</p>
+
+                            <p class="text-xs text-zinc-600 mt-0.5">Tap to expand installation guide</p>
+
+                        </div>
+
+                    </div>
+
+                    <svg class="w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform duration-200"
+
+                         :style="{ transform: guideOpen ? 'rotate(180deg)' : 'rotate(0deg)' }"
+
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+
+                    </svg>
+
+                </button>
+
+                <div v-if="guideOpen" class="px-4 pb-4 border-t border-white/5">
+
+                    <div class="mt-4 rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
+
+                        <div class="flex items-center gap-3 mb-3 pb-3 border-b border-purple-500/15">
+
+                            <span class="text-lg">📦</span>
+
+                            <div>
+
+                                <p class="text-sm font-bold text-purple-300">Standalone APK</p>
+
+                                <span class="text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded uppercase tracking-wide">No root needed</span>
+
+                            </div>
+
+                        </div>
+
+                        <ol class="space-y-2.5 text-xs text-zinc-400">
+
+                            <li class="flex gap-2.5">
+
+                                <span class="flex-shrink-0 w-5 h-5 rounded bg-purple-500/15 text-purple-300 font-bold flex items-center justify-center text-[10px]">1</span>
+
+                                <span>Install <strong class="text-zinc-200">MicroG</strong> if the app requires Google Services — available in the downloads list below.</span>
+
+                            </li>
+
+                            <li class="flex gap-2.5">
+
+                                <span class="flex-shrink-0 w-5 h-5 rounded bg-purple-500/15 text-purple-300 font-bold flex items-center justify-center text-[10px]">2</span>
+
+                                <span>Download the <strong class="text-zinc-200">.apk</strong> and install it — or tap the <strong class="text-emerald-400">Obtainium</strong> button to track updates automatically.</span>
+
+                            </li>
+
+                            <li class="flex gap-2.5">
+
+                                <span class="flex-shrink-0 w-5 h-5 rounded bg-purple-500/15 text-purple-300 font-bold flex items-center justify-center text-[10px]">3</span>
+
+                                <span>Done. No root or special setup required.</span>
+
+                            </li>
+
+                        </ol>
+
+                        <div class="mt-3 pt-3 border-t border-purple-500/15">
+
+                            <p class="text-[10px] text-zinc-600 uppercase font-bold tracking-wider mb-2">Optional dependency</p>
+
+                            <a href="https://github.com/MorpheApp/MicroG-RE/releases/latest" target="_blank" rel="noopener"
+
+                               class="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-300 border border-purple-500/20 bg-purple-500/8 px-3 py-1.5 rounded-lg hover:bg-purple-500/20 transition-colors">
+
+                                MicroG-RE
+
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 010 1.5h-3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-3.5a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.854-1h4a.75.75 0 01.75.75v4a.75.75 0 01-1.5 0V2.56l-5.22 5.22a.75.75 0 01-1.06-1.06L12.44 1.5h-1.836a.75.75 0 010-1.5z"/></svg>
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <p class="mt-3 text-xs text-zinc-600 flex items-start gap-2">
+
+                        <span class="flex-shrink-0">💡</span>
+
+                        <span>Most apps work without MicroG. Only apps that need Google sign-in or push notifications require it.</span>
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
+
+                <template v-for="(appKey, index) in ORDER" :key="appKey">
+
+                    <div v-if="appData[appKey]"
+
+                         class="app-card glass-panel p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-4 animate-fade-in group"
+
+                         :style="{ animationDelay: `${0.14 + (index * 0.06)}s`, '--accent': ACCENTS[appKey] }"
+
+                         @mouseenter="$event.currentTarget.style.borderColor = ACCENTS[appKey] + '55'; $event.currentTarget.style.boxShadow = '0 12px 40px -12px ' + ACCENTS[appKey] + '33'"
+
+                         @mouseleave="$event.currentTarget.style.borderColor = ''; $event.currentTarget.style.boxShadow = ''">
+
+                        <div class="flex items-center gap-4 w-full sm:w-auto flex-1">
+
+                            <div class="icon-well w-14 h-14 rounded-xl flex items-center justify-center p-2.5 border border-white/5"
+
+                                 :style="{ background: `radial-gradient(circle at 30% 20%, ${ACCENTS[appKey]}22, #0a0a0b)` }">
+
+                                <img :src="appData[appKey].icon" :alt="appData[appKey].displayName" class="w-full h-full object-contain">
+
+                            </div>
+
+                            <div class="flex-1">
+
+                                <h3 class="text-lg font-bold text-zinc-100 tracking-tight">{{ appData[appKey].displayName }}</h3>
+
+                                <p class="text-zinc-500 text-xs sm:text-sm font-mono">{{ appData[appKey].versionText }}</p>
+
+                                <p v-if="appData[appKey].downloadCount > 0" class="text-zinc-600 text-xs mt-0.5">{{ appData[appKey].downloadCount.toLocaleString() }} downloads</p>
+
+                            </div>
+
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+
+                            <a :href="appData[appKey].downloadUrl"
+
+                               class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-semibold text-sm text-center transition-all border"
+
+                               :style="{ color: ACCENTS[appKey], borderColor: ACCENTS[appKey] + '40', background: ACCENTS[appKey] + '14' }"
+
+                               onmouseover="this.style.background=this.style.borderColor.replace('40','cc'); this.style.color='#fff';"
+
+                               :onmouseleave="`this.style.background='${ACCENTS[appKey]}14'; this.style.color='${ACCENTS[appKey]}';`">
+
+                                Download
+
+                            </a>
+
+                            <a :href="getObtainiumUrl(appKey)" title="Track with Obtainium"
+
+                               class="flex items-center justify-center bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/10 border border-white/10 w-11 h-11 rounded-xl transition-all flex-shrink-0">
+
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                    <div v-else class="glass-panel-muted p-5 rounded-2xl flex items-center gap-4 opacity-50 animate-fade-in" :style="{ animationDelay: `${0.14 + (index * 0.06)}s` }">
+
+                        <div class="w-14 h-14 bg-[#0a0a0b] rounded-xl flex items-center justify-center p-2.5 border border-white/5">
+
+                            <img :src="ICONS[appKey]" :alt="DISPLAY_NAMES[appKey]" class="w-full h-full object-contain grayscale opacity-30">
+
+                        </div>
+
+                        <div class="flex-1">
+
+                            <h3 class="text-lg font-bold text-zinc-600 tracking-tight">{{ DISPLAY_NAMES[appKey] }}</h3>
+
+                            <p class="text-zinc-700 text-xs sm:text-sm font-medium">Not found</p>
+
+                        </div>
+
+                    </div>
+
+                </template>
+
+            </div>
+
+
+
+            <div v-if="changelogHTML" class="animate-fade-in" style="animation-delay: 0.32s;">
+
+                <h2 class="text-2xl font-bold text-zinc-100 mb-4 flex items-center gap-2.5 tracking-tight">
+
+                    <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+
+                    Latest Release Notes
+
+                </h2>
+
+                <div class="glass-panel rounded-2xl p-6 md:p-8 markdown-body text-sm md:text-base" v-html="changelogHTML"></div>
+
+            </div>
+
+
+
+            <footer class="mt-16 pb-8 text-center text-zinc-600 text-sm animate-fade-in" style="animation-delay: 0.4s;">
+
+                <p>Automatically built via GitHub Actions.</p>
+
+                <p class="mt-1">Source code:
+
+                    <a :href="'https://github.com/' + REPO" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-white hover:underline transition-colors">youtube-morphe</a>
+
+                </p>
+
+            </footer>
+
+        </template>
+
     </div>
 
+
+
     <script>
-      const OWNER = "fuckpdf";
-      const REPO = "youtube-morphe";
-      
-      const DEFAULT_VISIBLE = 5;
 
-      const fmt = (n) => Number(n).toLocaleString();
-      const fmtDt = (d) =>
-        new Date(d).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
-      const fmtSz = (b) =>
-        b < 1048576
-          ? (b / 1024).toFixed(1) + " KB"
-          : (b / 1048576).toFixed(1) + " MB";
+        const { createApp, ref, onMounted } = Vue;
 
-      const COLORS = [
-        "#4c9eff",
-        "#23d18b",
-        "#f48b3a",
-        "#a57cf5",
-        "#e8a838",
-        "#f06b8a",
-        "#18d4c8",
-        "#7cc84e",
-        "#d46ff0",
-        "#5ab8f5",
-        "#f0c240",
-        "#60c88a",
-      ];
 
-      // İkon Tanımlamaları
-      const APP_ICONS = {
-        youtube: "https://cdn.simpleicons.org/youtube/FF0000",
-        "yt.music": "https://cdn.simpleicons.org/youtubemusic/FF0000",
-        instagram: "https://cdn.simpleicons.org/instagram/E4405F",
-        twitter: "https://cdn.simpleicons.org/x/ffffff",
-        reddit: "https://cdn.simpleicons.org/reddit/FF4500",
-        microg: "https://cdn.simpleicons.org/google/4285F4"
-      };
 
-      // Dosya adına göre uygun ikonu getiren fonksiyon
-      function getAppIcon(filename) {
-        const lower = filename.toLowerCase();
-        if (lower.includes('yt.music')) return APP_ICONS['yt.music'];
-        if (lower.includes('youtube')) return APP_ICONS['youtube'];
-        if (lower.includes('instagram')) return APP_ICONS['instagram'];
-        if (lower.includes('twitter')) return APP_ICONS['twitter'];
-        if (lower.includes('reddit')) return APP_ICONS['reddit'];
-        if (lower.includes('microg')) return APP_ICONS['microg'];
-        return null;
-      }
+        createApp({
 
-      let _releases = [],
-        _sort = "newest";
+            setup() {
 
-      function getFileType(name) {
-        if (/\.apk$/i.test(name)) return "apk";
-        return "other";
-      }
+                const REPO = "fuckpdf/youtube-morphe";
 
-      function shortTag(t) {
-        return t.replace(/-(all|morphe|release|stable|beta|alpha)$/i, "");
-      }
 
-      function dlIcon(s = 12) {
-        return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="currentColor"><path d="M7.47 10.78a.75.75 0 001.06 0l3.75-3.75a.75.75 0 00-1.06-1.06L8.75 8.44V1.75a.75.75 0 00-1.5 0v6.69L4.78 5.97a.75.75 0 00-1.06 1.06l3.75 3.75zM1.75 13.5a.75.75 0 000 1.5h12.5a.75.75 0 000-1.5H1.75z"/></svg>`;
-      }
-      function chevSvg(s = 10) {
-        return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="currentColor"><path d="M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z"/></svg>`;
-      }
-      function extIcon(s = 11) {
-        return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="currentColor"><path d="M3.75 2h3.5a.75.75 0 010 1.5h-3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h8.5a.25.25 0 00.25-.25v-3.5a.75.75 0 011.5 0v3.5A1.75 1.75 0 0112.25 14h-8.5A1.75 1.75 0 012 12.25v-8.5C2 2.784 2.784 2 3.75 2zm6.854-1h4a.75.75 0 01.75.75v4a.75.75 0 01-1.5 0V2.56l-5.22 5.22a.75.75 0 01-1.06-1.06L12.44 1.5h-1.836a.75.75 0 010-1.5z"/></svg>`;
-      }
 
-      async function fetchAllReleases() {
-        const r = await fetch(
-          `https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=20&page=1`,
-          { headers: { Accept: "application/vnd.github+json" } }
-        );
-        const d = await r.json();
-        if (d.message) throw new Error(d.message);
-        return Array.isArray(d) ? d : [];
-      }
+                const ICONS = {
 
-      function render(releases, filter, sort) {
-        _releases = releases;
-        _sort = sort || _sort;
+                    "youtube": "https://cdn.simpleicons.org/youtube/FF0000",
 
-        let sorted = [...releases];
-        if (_sort === "oldest") sorted = [...releases].reverse();
-        if (_sort === "popular")
-          sorted = [...releases].sort((a, b) => {
-            const sa = (a.assets || []).reduce(
-              (s, x) => s + x.download_count,
-              0,
-            );
-            const sb = (b.assets || []).reduce(
-              (s, x) => s + x.download_count,
-              0,
-            );
-            return sb - sa;
-          });
+                    "youtube-music": "https://cdn.simpleicons.org/youtubemusic/FF0000",
 
-        const allAssets = releases.flatMap((r) => r.assets || []);
-        const totalDl = allAssets.reduce((s, a) => s + a.download_count, 0);
-        const topAsset = allAssets.length
-          ? allAssets.reduce((a, b) =>
-              a.download_count > b.download_count ? a : b,
-            )
-          : null;
-        const latest = releases[0];
+                    "reddit": "https://cdn.simpleicons.org/reddit/FF4500",
 
-        const relTots = [...releases].map((r, i) => ({
-          tag: shortTag(r.tag_name),
-          date: fmtDt(r.published_at),
-          total: (r.assets || []).reduce((s, a) => s + a.download_count, 0),
-          color: COLORS[i % COLORS.length],
-        }));
-        const maxRel = Math.max(...relTots.map((x) => x.total), 1);
+                    "twitter": "https://cdn.simpleicons.org/x/ffffff",
 
-        const filtered =
-          filter === "all"
-            ? sorted
-            : sorted.filter((r) => r.tag_name === filter);
-        const opts = [...releases]
-          .map(
-            (r) =>
-              `<option value="${r.tag_name}">${shortTag(r.tag_name)} — ${fmtDt(r.published_at)}</option>`,
-          )
-          .join("");
+                    "instagram": "https://cdn.simpleicons.org/instagram/E4405F",
 
-        const chartRowsHTML = relTots
-          .map(
-            (r, i) => `
-          <div class="bar-row ${i >= DEFAULT_VISIBLE ? "hidden" : ""}" data-chart-idx="${i}">
-            <div class="bar-lbl"><span class="bar-tag">${r.tag}</span><span class="bar-date">${r.date}</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:${Math.round((r.total / maxRel) * 100)}%;background:${r.color}"></div></div>
-            <span class="bar-cnt">${fmt(r.total)}</span>
-          </div>`,
-          )
-          .join("");
+                    "microg": "https://cdn.simpleicons.org/google/4285F4",
 
-        const chartToggleHTML =
-          relTots.length > DEFAULT_VISIBLE
-            ? `<button class="chart-toggle" onclick="toggleChart()">${chevSvg(10)} Show all ${relTots.length} releases</button>`
-            : "";
+                    "github": "https://cdn.simpleicons.org/github/ffffff",
 
-        const cardsHTML = filtered
-          .map((rel) => {
-            const assets = (rel.assets || [])
-              .slice()
-              .sort((a, b) => b.download_count - a.download_count);
-            const relDl = assets.reduce((s, a) => s + a.download_count, 0);
-            const maxA = Math.max(...assets.map((a) => a.download_count), 1);
-            const isLatest = rel.tag_name === latest?.tag_name;
-            const cid = "c-" + rel.tag_name.replace(/[^a-z0-9]/gi, "-");
+                    "niagara-launcher": "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
 
-            const apkAssets = assets.filter(
-              (a) => getFileType(a.name) === "apk",
-            );
-            const otherAssets = assets.filter(
-              (a) => getFileType(a.name) === "other",
-            );
+                    "pydroid3": "https://www.google.com/s2/favicons?sz=128&domain=pydroid3.com",
 
-            function rankCls(i) {
-              return i === 0
-                ? "r1"
-                : i === 1
-                  ? "r2"
-                  : i === 2
-                    ? "r3"
-                    : "r-other";
+                    "smart-launcher": "https://www.google.com/s2/favicons?sz=128&domain=smartlauncher.net",
+
+                    "wps-office": "https://www.google.com/s2/favicons?sz=128&domain=wps.com",
+
+                    "gboard": "https://cdn.simpleicons.org/google/4285F4",
+
+                    "speedtest": "https://www.google.com/s2/favicons?sz=128&domain=speedtest.net",
+
+                    "solid-explorer": "https://www.google.com/s2/favicons?sz=128&domain=solidexplorer.com",
+
+                    "brave": "https://cdn.simpleicons.org/brave/FB542B"
+
+                };
+
+
+
+                const DISPLAY_NAMES = {
+
+                    "youtube": "YouTube",
+
+                    "youtube-music": "YT.Music",
+
+                    "reddit": "Reddit",
+
+                    "twitter": "Twitter",
+
+                    "instagram": "Instagram",
+
+                    "microg": "MicroG (GmsCore)",
+
+                    "github": "GitHub",
+
+                    "niagara-launcher": "Niagara Launcher",
+
+                    "pydroid3": "PyDroid3",
+
+                    "smart-launcher": "Smart Launcher",
+
+                    "wps-office": "WPS Office",
+
+                    "gboard": "Gboard",
+
+                    "speedtest": "Speedtest",
+
+                    "solid-explorer": "Solid Explorer",
+
+                    "brave": "Brave"
+
+                };
+
+
+
+                const ACCENTS = {
+
+                    "youtube": "#ff3b3b",
+
+                    "youtube-music": "#ff6b95",
+
+                    "reddit": "#ff5700",
+
+                    "twitter": "#1d9bf0",
+
+                    "instagram": "#e1306c",
+
+                    "microg": "#34a853",
+
+                    "github": "#e6edf3",
+
+                    "niagara-launcher": "#2196f3",
+
+                    "pydroid3": "#3776ab",
+
+                    "smart-launcher": "#ff9800",
+
+                    "wps-office": "#ff5b33",
+
+                    "gboard": "#4285f4",
+
+                    "speedtest": "#8bc53f",
+
+                    "solid-explorer": "#4caf50",
+
+                    "brave": "#fb542b"
+
+                };
+
+
+
+                const ORDER = [
+
+                    "youtube", "youtube-music", "instagram", "twitter", "reddit",
+
+                    "github", "niagara-launcher", "pydroid3", "smart-launcher", "wps-office",
+
+                    "gboard", "speedtest", "solid-explorer", "brave",
+
+                    "microg"
+
+                ];
+
+
+
+                const loading = ref(true);
+
+                const errorMsg = ref(null);
+
+                const isRateLimit = ref(false);
+
+                const latestDate = ref("");
+
+                const appData = ref({});
+
+                const changelogHTML = ref(null);
+
+                const guideOpen = ref(false);
+
+
+
+                const init = async () => {
+
+                    loading.value = true;
+
+                    errorMsg.value = null;
+
+
+
+                    try {
+
+                        const response = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/latest`, {
+
+                            headers: { "Accept": "application/vnd.github+json" },
+
+                            cache: "no-store"
+
+                        });
+
+
+
+                        if (!response.ok) {
+
+                            const remaining = response.headers.get("X-RateLimit-Remaining");
+
+                            if (response.status === 403 && remaining === "0") {
+
+                                isRateLimit.value = true;
+
+                                throw new Error("GitHub API rate limit reached. Please try again in a few minutes.");
+
+                            }
+
+                            throw new Error(`Could not reach the GitHub API (status ${response.status}). Ensure the 'latest' release exists.`);
+
+                        }
+
+
+
+                        const release = await response.json();
+
+
+
+                        if (!release.assets || release.assets.length === 0) {
+
+                            throw new Error("No APKs found in the latest release.");
+
+                        }
+
+
+
+                        latestDate.value = new Date(release.published_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                        let tempAppData = {};
+
+
+
+                        release.assets.forEach(asset => {
+
+                            const nameLower = asset.name.toLowerCase();
+
+                            if (!nameLower.endsWith('.apk')) return;
+
+
+
+                            let appKey = null;
+
+                            if (nameLower.startsWith("yt.music-")) appKey = "youtube-music";
+
+                            else if (nameLower.startsWith("youtube-")) appKey = "youtube";
+
+                            else if (nameLower.startsWith("reddit-")) appKey = "reddit";
+
+                            else if (nameLower.startsWith("twitter-")) appKey = "twitter";
+
+                            else if (nameLower.startsWith("instagram-")) appKey = "instagram";
+
+                            else if (nameLower.startsWith("github-")) appKey = "github";
+
+                            else if (nameLower.startsWith("niagara launcher-")) appKey = "niagara-launcher";
+
+                            else if (nameLower.startsWith("pydroid3-")) appKey = "pydroid3";
+
+                            else if (nameLower.startsWith("smart launcher-")) appKey = "smart-launcher";
+
+                            else if (nameLower.startsWith("wps office-")) appKey = "wps-office";
+
+                            else if (nameLower.startsWith("gboard-")) appKey = "gboard";
+
+                            else if (nameLower.startsWith("speedtest-")) appKey = "speedtest";
+
+                            else if (nameLower.startsWith("solid explorer-")) appKey = "solid-explorer";
+
+                            else if (nameLower.startsWith("brave-")) appKey = "brave";
+
+                            else if (nameLower === "microg.apk") appKey = "microg";
+
+
+
+                            if (appKey && !tempAppData[appKey]) {
+
+                                let versionText = "GmsCore / Support component";
+
+                                if (appKey !== "microg") {
+
+                                    const rawVersion = asset.name.split('-').slice(1).join('-').replace('.apk', '');
+
+                                    versionText = "v" + rawVersion;
+
+                                }
+
+
+
+                                tempAppData[appKey] = {
+
+                                    name: asset.name,
+
+                                    displayName: DISPLAY_NAMES[appKey],
+
+                                    icon: ICONS[appKey],
+
+                                    versionText: versionText,
+
+                                    downloadCount: asset.download_count || 0,
+
+                                    downloadUrl: asset.browser_download_url
+
+                                };
+
+                            }
+
+                        });
+
+
+
+                        appData.value = tempAppData;
+
+                        if (release.body) {
+
+                            const rawHtml = marked.parse(release.body);
+
+                            changelogHTML.value = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
+
+                        }
+
+
+
+                        loading.value = false;
+
+
+
+                    } catch (error) {
+
+                        console.error(error);
+
+                        errorMsg.value = error.message;
+
+                        loading.value = false;
+
+                    }
+
+                };
+
+
+
+                const getObtainiumUrl = (appKey) => {
+
+                    function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+                    const name = DISPLAY_NAMES[appKey] || appKey;
+
+                    const filter = appKey === "microg"
+
+                        ? escRe("MicroG") + "\\.apk"
+
+                        : escRe(name) + "-.*\\.apk";
+
+                    return `obtainium://add/https://github.com/${REPO}?apkFilterRegEx=${encodeURIComponent(filter)}&releaseTitleFilterRegEx=${encodeURIComponent("latest")}`;
+
+                };
+
+
+
+                onMounted(() => init());
+
+
+
+                return {
+
+                    REPO, ICONS, DISPLAY_NAMES, ACCENTS, ORDER,
+
+                    loading, errorMsg, isRateLimit, latestDate, appData, changelogHTML,
+
+                    guideOpen, getObtainiumUrl, init
+
+                };
+
             }
 
-            function buildRow(a, sectionIdx, typeKey) {
-              const pct = Math.round((a.download_count / maxA) * 100);
-              const isApk = typeKey === "apk";
-              
-              // İkonu belirleme
-              const iconUrl = getAppIcon(a.name);
-              const iconHtml = iconUrl ? `<img src="${iconUrl}" class="app-ico" alt="">` : `<span class="app-ico" style="font-size:14px;line-height:16px;text-align:center;">📦</span>`;
+        }).mount('#app');
 
-              return `
-              <div class="asset-item ${isApk ? "is-apk" : ""}">
-                <div class="asset-info">
-                  <span class="rank-dot ${rankCls(sectionIdx)}">${sectionIdx + 1}</span>
-                  ${iconHtml}
-                  <span class="asset-name" title="${a.name}">${a.name}</span>
-                </div>
-                <a class="dl-btn ${isApk ? "apk-dl" : ""}" href="${a.browser_download_url}" title="Download ${a.name}">
-                  ${dlIcon(12)} Download
-                </a>
-                <div class="asset-stats">
-                  <span class="sz-lbl">${fmtSz(a.size)}</span>
-                  <div class="dl-bar-wrap">
-                    <div class="dl-bar"><div class="dl-bar-fill" style="width:${pct}%"></div></div>
-                    <span class="dl-count">${fmt(a.download_count)}</span>
-                    <span class="dl-count-note">dls</span>
-                  </div>
-                </div>
-              </div>`;
-            }
-
-            let body = "";
-            if (apkAssets.length > 0) {
-              body += `<div class="asset-section">
-              <div class="asset-section-hd">
-                <div class="asset-section-ico apk">📦</div>
-                <span class="asset-section-name apk">APK Files</span>
-                <span class="asset-section-desc">Install directly</span>
-              </div>
-              ${apkAssets.map((a, i) => buildRow(a, i, "apk")).join("")}
-            </div>`;
-            }
-            if (otherAssets.length > 0) {
-              body += `<div class="asset-section">${otherAssets
-                .map((a, i) => buildRow(a, i, "other"))
-                .join("")}</div>`;
-            }
-            if (assets.length === 0)
-              body = `<div class="no-asset">No downloadable assets</div>`;
-
-            return `
-            <div class="rel-card" id="${cid}">
-              <div class="rel-hd" onclick="tog('${cid}')">
-                <div class="rel-hd-l">
-                  <div class="rel-tag-row">
-                    <span class="rel-tag">${shortTag(rel.tag_name)}</span>
-                    <span class="chev">▾</span>
-                  </div>
-                  ${rel.name && rel.name !== rel.tag_name ? `<span class="rel-name">${rel.name}</span>` : ""}
-                  <div class="rel-meta">
-                    <span>${fmtDt(rel.published_at)}</span>
-                    ${relDl > 0 ? `<span class="sep"></span><span class="dl-pill">${dlIcon(10)} ${fmt(relDl)} downloads</span>` : ""}
-                  </div>
-                </div>
-                <div class="rel-hd-r">
-                  ${isLatest ? `<span class="badge b-latest">Latest</span>` : ""}
-                  ${rel.prerelease ? `<span class="badge b-pre">Pre-release</span>` : ""}
-                </div>
-              </div>
-              <div class="rel-body">${body}</div>
-            </div>`;
-          })
-          .join("");
-
-        document.getElementById("root").innerHTML = `
-          <div class="hd">
-            <div class="brand">
-              <div class="brand-ico">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-                </svg>
-              </div>
-              <div class="brand-tx">
-                <div class="brand-owner">${OWNER}</div>
-                <div class="brand-repo">${REPO}</div>
-              </div>
-            </div>
-            <button class="ref-btn" onclick="loadData()">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 105 5 .75.75 0 011.5 0 6.5 6.5 0 11-6.5-6.5h.75V.25a.25.25 0 01.427-.177l2.5 2.5a.25.25 0 010 .354l-2.5 2.5A.25.25 0 018.75 5.25V3H8z"/></svg>
-              Refresh
-            </button>
-          </div>
-
-          <div class="guide" id="setup-guide">
-            <div class="guide-toggle" onclick="toggleGuide()">
-              <div class="guide-toggle-l">
-                <div class="guide-icon">📖</div>
-                <div>
-                  <div class="guide-label">How to Install</div>
-                  <div class="guide-sub">APK installation guide — tap to expand</div>
-                </div>
-              </div>
-              <span class="guide-chev">▾</span>
-            </div>
-            <div class="guide-body">
-              <div class="guide-grid">
-                <div class="guide-card apk">
-                  <div class="guide-card-hd">
-                    <div class="guide-card-ico">📦</div>
-                    <div>
-                      <div class="guide-card-title">Standalone APK</div>
-                      <span class="guide-card-tag">No root needed</span>
-                    </div>
-                  </div>
-                  <ul class="guide-steps">
-                    <li class="guide-step"><span class="guide-step-num">1</span><span>Install <strong>MicroG</strong> if the app requires Google Services.</span></li>
-                    <li class="guide-step"><span class="guide-step-num">2</span><span>Download and install the <strong>.apk</strong> from this page.</span></li>
-                    <li class="guide-step"><span class="guide-step-num">3</span><span>Done. The app is ready to use.</span></li>
-                  </ul>
-                  <div class="guide-deps">
-                    <span class="guide-dep-label">Optional Tool</span>
-                    <a class="dep-link microg" href="https://github.com/MorpheApp/MicroG-RE/releases/latest" target="_blank" rel="noopener">
-                      ${extIcon(11)} MicroG-RE <span class="dep-badge">APK</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <div class="guide-note">
-                <span class="guide-note-ico">💡</span>
-                <span><strong>APK</strong> works on any device — no root required. Some apps (like Twitter, Reddit) do not even require MicroG.</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="metrics">
-            <div class="met">
-              <div class="met-lbl">Total Downloads</div>
-              <div class="met-val blue">${fmt(totalDl)}</div>
-              <div class="met-sub">all releases</div>
-            </div>
-            <div class="met">
-              <div class="met-lbl">Releases</div>
-              <div class="met-val green">${releases.length}</div>
-            </div>
-            <div class="met">
-              <div class="met-lbl">Total Assets</div>
-              <div class="met-val">${allAssets.length}</div>
-            </div>
-            <div class="met">
-              <div class="met-lbl">Latest</div>
-              <div class="met-val sm">${latest ? shortTag(latest.tag_name) : "—"}</div>
-              <div class="met-sub">${latest ? fmtDt(latest.published_at) : ""}</div>
-            </div>
-          </div>
-
-          ${
-            topAsset
-              ? `
-          <div class="banner">
-            <span class="banner-star">★</span>
-            Most downloaded: <code>${topAsset.name}</code> · <strong>${fmt(topAsset.download_count)} downloads</strong>
-          </div>`
-              : ""
-          }
-
-          <div class="legend">
-            <span class="legend-label">Key</span>
-            <div class="legend-item"><span class="legend-swatch apk"></span>📦 APK — Install directly</div>
-          </div>
-
-          ${
-            relTots.length > 0
-              ? `
-          <div class="chart-card">
-            <div class="sec-hd">
-              <span class="sec-title">Downloads by Release</span>
-              <span class="sec-hint">newest → oldest</span>
-            </div>
-            <div id="chart-rows">${chartRowsHTML}</div>
-            ${chartToggleHTML}
-          </div>`
-              : ""
-          }
-
-          <div class="controls">
-            <div class="ctl-l">
-              <span class="ctl-lbl">Filter</span>
-              <select id="fsel" onchange="render(_releases,this.value,_sort)">
-                <option value="all">All releases</option>
-                ${opts}
-              </select>
-              <button class="srt-btn ${_sort === "newest" ? "on" : ""}" onclick="resort('newest')">Newest</button>
-              <button class="srt-btn ${_sort === "oldest" ? "on" : ""}" onclick="resort('oldest')">Oldest</button>
-              <button class="srt-btn ${_sort === "popular" ? "on" : ""}" onclick="resort('popular')">Popular</button>
-            </div>
-            <span class="ctl-count">${filtered.length} / ${releases.length}</span>
-          </div>
-
-          <div id="cards">
-            ${filtered.length === 0 ? '<div class="no-asset" style="padding:2rem">No releases found.</div>' : cardsHTML}
-          </div>`;
-
-        document.getElementById("fsel").value = filter;
-      }
-
-      function tog(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle("collapsed");
-      }
-      function resort(s) {
-        render(_releases, document.getElementById("fsel").value, s);
-      }
-      function toggleGuide() {
-        const g = document.getElementById("setup-guide");
-        if (g) g.classList.toggle("open");
-      }
-
-      function toggleChart() {
-        const btn = document.querySelector(".chart-toggle");
-        if (!btn) return;
-        const rows = document.querySelectorAll("[data-chart-idx]");
-        const isExpanded = btn.classList.contains("expanded");
-        rows.forEach((row) => {
-          const idx = parseInt(row.dataset.chartIdx);
-          if (isExpanded) {
-            if (idx >= DEFAULT_VISIBLE) row.classList.add("hidden");
-          } else row.classList.remove("hidden");
-        });
-        btn.classList.toggle("expanded");
-        btn.innerHTML = `${chevSvg(10)} ${isExpanded ? `Show all ${rows.length} releases` : "Show less"}`;
-      }
-
-      async function loadData() {
-        document.getElementById("root").innerHTML =
-          `<div class="state"><div class="spin"></div><br>Fetching release data…</div>`;
-        try {
-          const releases = await fetchAllReleases();
-          render(releases, "all", "newest");
-          const g = document.getElementById("setup-guide");
-          if (g) g.classList.add("open");
-        } catch (e) {
-          document.getElementById("root").innerHTML =
-            `<div class="state err">GitHub API error: ${e.message}<br><br>
-             <button class="ref-btn" onclick="loadData()">Try again</button></div>`;
-        }
-      }
-
-      loadData();
     </script>
-  </body>
+
+</body>
+
 </html>
+
