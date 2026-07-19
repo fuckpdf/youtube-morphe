@@ -352,8 +352,9 @@ async function processApp(appKey, desktop, patches) {
 
     if (patchedApksList.length > 0) {
       const date = new Date();
-      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").split("T")[0];
-      const releaseName = `Morphe & Piko Builds (${tagDateStr})`;
+      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const releaseTag = `build-${tagDateStr}`;
+      const releaseName = `Patched APKs · ${date.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}`;
 
       let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
 
@@ -370,8 +371,8 @@ async function processApp(appKey, desktop, patches) {
       if (needsRushi && rushiNotes) unifiedReleaseBody += rushiNotes;
       if (needsBufferk && bufferkNotes) unifiedReleaseBody += bufferkNotes;
 
-      console.log(`\n📢 Creating Unified Release: latest`);
-      const release = await ensureRelease("latest", releaseName, unifiedReleaseBody);
+      console.log(`\n📢 Creating New Release: ${releaseTag}`);
+      const release = await ensureRelease(releaseTag, releaseName, unifiedReleaseBody);
 
       let microgUploaded = false;
       for (const apk of patchedApksList) {
