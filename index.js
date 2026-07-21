@@ -18,7 +18,6 @@ const DISPLAY_NAMES = {
   "instagram": "Instagram",
   "github": "GitHub",
   "niagara-launcher": "Niagara Launcher",
-  "nova-launcher": "Nova Launcher",
   "pydroid3": "PyDroid3",
   "smart-launcher": "Smart Launcher",
   "wps-office": "WPS Office",
@@ -32,16 +31,7 @@ const APKMIRROR_APPS = [
   "youtube",
   "youtube-music",
   "reddit",
-  "twitter",
-  "instagram",
-  "github",
-  "niagara-launcher",
-  "nova-launcher",
-  "pydroid3",
-  "smart-launcher",
-  "gboard",
-  "solid-explorer",
-  "brave"
+  "twitter"
 ];
 
 const APPS_CONFIG = {
@@ -104,15 +94,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
     exclude: [],
-    forceVersion: "1.16.8"
-  },
-  "nova-launcher": {
-    pkg: "com.teslacoilsw.launcher",
-    name: "nova-launcher",
-    patchSource: "hoodles",
-    arch: "arm64-v8a",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain=novalauncher.com",
-    exclude: []
+    forceVersion : "1.16.8"
   },
   "pydroid3": {
     pkg: "ru.iiec.pydroid3",
@@ -145,15 +127,7 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/google/4285F4",
     exclude: [],
-    enable: [
-      "Enable voice typing in incognito",
-      "Enable key shape selection",
-      "Enable clipboard in incognito",
-      "Enable access points menu redesign",
-      "Enable Undo feature",
-      "Enable OCR feature",
-      "Always-incognito mode"
-    ]
+    enable: ["Enable voice typing in incognito", "Enable key shape selection", "Enable clipboard in incognito", "Enable access points menu redesign", "Enable Undo feature", "Enable OCR feature", "Always-incognito mode"]
   },
   "speedtest": {
     pkg: "org.zwanoo.android.speedtest",
@@ -190,7 +164,6 @@ const PROCESS_ORDER = [
   "instagram",
   "github",
   "niagara-launcher",
-  "nova-launcher",
   "pydroid3",
   "smart-launcher",
   "wps-office",
@@ -203,7 +176,7 @@ const PROCESS_ORDER = [
 async function processApp(appKey, desktop, patches) {
   const config = APPS_CONFIG[appKey];
   console.log(`\n📦 PROCESSING: ${config.name.toUpperCase()}`);
-
+  
   const isApkMirrorApp = APKMIRROR_APPS.includes(config.name);
 
   let selectedVersion = config.forceVersion;
@@ -214,6 +187,7 @@ async function processApp(appKey, desktop, patches) {
         `java -jar "${desktop}" list-versions -f ${config.pkg} --patches="${patches}" --include-experimental`,
         { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
       );
+
       const versions = extractYoutubeVersions(output);
       if (versions && versions.length > 0) {
         selectedVersion = pickLatestVersion(versions);
@@ -282,14 +256,7 @@ async function processApp(appKey, desktop, patches) {
     });
     const desktop = desktopObj.name;
 
-    const patchesPool = {
-      morphe: null,
-      piko: null,
-      hoodles: null,
-      adobo: null,
-      rushi: null,
-      bufferk: null
-    };
+    const patchesPool = { morphe: null, piko: null, hoodles: null, adobo: null, rushi: null, bufferk: null };
     let morpheNotes = "";
     let pikoNotes = "";
     let hoodlesNotes = "";
