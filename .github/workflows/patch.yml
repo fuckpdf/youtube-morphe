@@ -32,6 +32,16 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      - name: Install apkeep
+        run: |
+          asset_url=$(curl -sL https://api.github.com/repos/EFForg/apkeep/releases/latest \
+            | grep "browser_download_url.*apkeep-x86_64-unknown-linux-gnu\"" \
+            | cut -d '"' -f 4)
+          curl -L -o apkeep "$asset_url"
+          chmod +x apkeep
+          sudo mv apkeep /usr/local/bin/apkeep
+          apkeep --version
+
       - name: Install dependencies
         run: |
           npm install
@@ -63,6 +73,8 @@ jobs:
           KS_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KS_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GPLAY_EMAIL: ${{ secrets.GPLAY_EMAIL }}
+          GPLAY_AAS_TOKEN: ${{ secrets.GPLAY_AAS_TOKEN }}
 
       - name: Yayın Onay Belgesini (Provenance) Üret
         uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
