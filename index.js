@@ -9,6 +9,7 @@ const { ensureRelease, uploadPatchedApk, uploadMicroGOnce } = require("./lib/rel
 
 const apkmirror = require("./lib/apkmirror");
 const githubdl = require("./lib/githubdl");
+const playstore = require("./lib/playstore");
 
 const DISPLAY_NAMES = {
   "youtube": "YouTube",
@@ -24,14 +25,23 @@ const DISPLAY_NAMES = {
   "gboard": "Gboard",
   "speedtest": "Speedtest",
   "solid-explorer": "Solid Explorer",
-  "brave": "Brave"
+  "brave": "Brave",
+  "nova-launcher": "Nova Launcher"
 };
 
 const APKMIRROR_APPS = [
   "youtube",
   "youtube-music",
   "reddit",
-  "twitter"
+  "twitter",
+  "github",
+  "niagara-launcher",
+  "smart-launcher",
+  "solid-explorer",
+  "pydroid3",
+  "gboard",
+  "brave",
+  "nova-launcher"
 ];
 
 const APPS_CONFIG = {
@@ -153,6 +163,14 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/brave/FB542B",
     exclude: []
+  },
+  "nova-launcher": {
+    pkg: "com.teslacoilsw.launcher",
+    name: "nova-launcher",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=novalauncher.com",
+    exclude: []
   }
 };
 
@@ -170,7 +188,8 @@ const PROCESS_ORDER = [
   "gboard",
   "speedtest",
   "solid-explorer",
-  "brave"
+  "brave",
+  "nova-launcher"
 ];
 
 async function processApp(appKey, desktop, patches) {
@@ -212,8 +231,26 @@ async function processApp(appKey, desktop, patches) {
     throw new Error("Uygun bir sürüm numarası belirlenemedi.");
   }
 
-  const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
-  const apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
+  let apkPath = null;
+
+  if (isApkMirrorApp) {
+    try {
+      const playstoreResult = await playstore.downloadFromPlayStore(config.pkg);
+      if (playstoreResult.version === selectedVersion) {
+        console.log(`✅ Play Store sürümü hedefle eşleşti (${selectedVersion}) — kaynak olarak kullanılıyor.`);
+        apkPath = playstoreResult.filePath;
+      } else {
+        console.log(`⚠️ Play Store sürümü (${playstoreResult.version}) hedeften (${selectedVersion}) farklı — APKMirror'a düşülüyor.`);
+      }
+    } catch (err) {
+      console.log(`⚠️ Play Store denemesi başarısız: ${err.message} — APKMirror'a düşülüyor.`);
+    }
+  }
+
+  if (!apkPath) {
+    const downloadFunc = isApkMirrorApp ? apkmirror.downloadApk : githubdl.downloadApk;
+    apkPath = await downloadFunc(selectedVersion, config.name, config.forceBuild);
+  }
 
   let extraArgs = "";
   const argParts = [];
