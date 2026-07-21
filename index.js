@@ -18,6 +18,7 @@ const DISPLAY_NAMES = {
   "instagram": "Instagram",
   "github": "GitHub",
   "niagara-launcher": "Niagara Launcher",
+  "nova-launcher": "Nova Launcher",
   "pydroid3": "PyDroid3",
   "smart-launcher": "Smart Launcher",
   "wps-office": "WPS Office",
@@ -31,7 +32,16 @@ const APKMIRROR_APPS = [
   "youtube",
   "youtube-music",
   "reddit",
-  "twitter"
+  "twitter",
+  "instagram",
+  "github",
+  "niagara-launcher",
+  "nova-launcher",
+  "pydroid3",
+  "smart-launcher",
+  "gboard",
+  "solid-explorer",
+  "brave"
 ];
 
 const APPS_CONFIG = {
@@ -94,7 +104,15 @@ const APPS_CONFIG = {
     arch: "arm64-v8a",
     icon: "https://www.google.com/s2/favicons?sz=128&domain=niagaralauncher.app",
     exclude: [],
-    forceVersion : "1.16.8"
+    forceVersion: "1.16.8"
+  },
+  "nova-launcher": {
+    pkg: "com.teslacoilsw.launcher",
+    name: "nova-launcher",
+    patchSource: "hoodles",
+    arch: "arm64-v8a",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain=novalauncher.com",
+    exclude: []
   },
   "pydroid3": {
     pkg: "ru.iiec.pydroid3",
@@ -164,6 +182,7 @@ const PROCESS_ORDER = [
   "instagram",
   "github",
   "niagara-launcher",
+  "nova-launcher",
   "pydroid3",
   "smart-launcher",
   "wps-office",
@@ -351,43 +370,4 @@ async function processApp(appKey, desktop, patches) {
     }
 
     if (patchedApksList.length > 0) {
-      const date = new Date();
-      const tagDateStr = date.toISOString().replace(/[:.]/g, "-").slice(0, 19);
-      const releaseTag = `build-${tagDateStr}`;
-      const releaseName = `Patched APKs · ${date.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}`;
-
-      let unifiedReleaseBody = `### 📦 Latest Patched APKs\n\n`;
-
-      for (const apk of patchedApksList) {
-        unifiedReleaseBody += `* <img src="${apk.icon}" width="16" height="16"> **${apk.displayName}**\n`;
-      }
-
-      unifiedReleaseBody += `\n---\n\n`;
-
-      if (needsMorphe && morpheNotes) unifiedReleaseBody += morpheNotes;
-      if (needsPiko && pikoNotes) unifiedReleaseBody += pikoNotes;
-      if (needsHoodles && hoodlesNotes) unifiedReleaseBody += hoodlesNotes;
-      if (needsAdobo && adoboNotes) unifiedReleaseBody += adoboNotes;
-      if (needsRushi && rushiNotes) unifiedReleaseBody += rushiNotes;
-      if (needsBufferk && bufferkNotes) unifiedReleaseBody += bufferkNotes;
-
-      console.log(`\n📢 Creating New Release: ${releaseTag}`);
-      const release = await ensureRelease(releaseTag, releaseName, unifiedReleaseBody);
-
-      let microgUploaded = false;
-      for (const apk of patchedApksList) {
-        await uploadPatchedApk(release, apk.path);
-
-        if (!microgUploaded && (apk.appName === "youtube" || apk.appName === "youtube-music")) {
-          await uploadMicroGOnce(release);
-          microgUploaded = true;
-        }
-      }
-
-      console.log(`\n🎉 All apps successfully published under one release!`);
-    }
-  } catch (err) {
-    console.error("❌ Fatal error:", err.message);
-    process.exit(1);
-  }
-})();
+      const date = new Date
