@@ -188,9 +188,14 @@ async function processApp(appKey, desktop, patches) {
         { encoding: "utf8", maxBuffer: 1024 * 1024 * 10 }
       );
 
+      console.log(`📋 RAW OUTPUT (${config.name}):\n${output}`);
+
       const versions = extractYoutubeVersions(output);
+      console.log(`📋 PARSED VERSIONS (${config.name}):`, JSON.stringify(versions));
+
       if (versions && versions.length > 0) {
         selectedVersion = pickLatestVersion(versions);
+        console.log(`✅ SELECTED VERSION (${config.name}): ${selectedVersion}`);
       }
     } catch (e) {
       console.log(`⚠️ Sürüm listesi alınamadı: ${e.message}`);
@@ -336,7 +341,7 @@ async function processApp(appKey, desktop, patches) {
         match: (n) => n.endsWith(".mpp"),
       });
       patchesPool.bufferk = bufferkMpp.name;
-      bufferkNotes = `\n<details>\n<summary>🟣 <b>Bufferk Release Notes (${bufferkMpp.tag})</b></summary>\n<br>\n\n${bufferkMpp.body}\n\n</details>\n`;
+      bufferkNotes = `\n<details>\n<summary>🟣 <b>Bufferk Release Notes (${bufferkMpp.tag})</b></summary>\n<br>\n\n${bufferkNotes}\n\n</details>\n`;
     }
 
     const patchedApksList = [];
