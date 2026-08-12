@@ -57,6 +57,7 @@ const APPS_CONFIG = {
     patchSource: "morphe",
     arch: "arm64-v8a",
     icon: "https://cdn.simpleicons.org/reddit/FF4500",
+    enable: "Clone app", "Change installer source",
     exclude: []
   },
   "twitter": {
